@@ -1,53 +1,27 @@
+// App.jsx
 import './App.css'
-import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import TeamData from './pages/TeamData'
+import { useState, useEffect } from 'react'
+import { supabase } from './supabaseClient' // adjust path if needed
 
 function App() {
-  const [teamNumber, setTeamNumber] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const handleSaveNotes = () => {
-    console.log(`Save notes for team ${teamNumber}:`, notes)
+  const [instruments, setInstruments] = useState([]);
+  useEffect(() => {
+    getInstruments();
+  }, []);
+  async function getInstruments() {
+  const { data } = await supabase.from("instruments").select();
+  setInstruments(data);
   }
-
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>1683 Visualizer</h1>
-
-      <div className="button-wrapper">
-        <button className="team data">Team Data</button>
-        <button>Button 2</button>
-        <button>Button 3</button>
-        <button>Button 4</button>
-      </div>
-
-      <div>
-        <h1>Welcome</h1>
-      </div>
-
-      <div>
-        <label>Team Number:</label>
-        <input
-          type="text"
-          value={teamNumber}
-          onChange={e => setTeamNumber(e.target.value)}
-        />
-      </div>
-
-      <div style={{ marginTop: '1rem' }}>
-        <label>Notes:</label>
-        <br />
-        <textarea
-          rows="6"
-          cols="50"
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-        />
-      </div>
-
-      <button style={{ marginTop: '1rem' }} onClick={handleSaveNotes}>
-        Save Notes
-      </button>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/team-data" element={<TeamData />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
