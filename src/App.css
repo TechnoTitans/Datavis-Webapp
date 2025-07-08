@@ -68,3 +68,11 @@
 .read-the-docs {
   color: #888;
 }
+
+table{
+   overflow-y:scroll;
+   overflow-x: scroll;
+   width: 600px;
+   height:400px;
+   display:block;
+}

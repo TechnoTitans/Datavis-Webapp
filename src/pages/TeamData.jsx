@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
 function TeamData() {
+
+  //useState() returns things: the team number and the function used to change it
   const [teamNumber, setTeamNumber] = useState('254') // default selection
   const [notes, setNotes] = useState('')
   const [matchRows, setMatchRows] = useState([])
@@ -16,10 +18,10 @@ const fetchMatches = async () => {
   setLoading(true)
 
   const { data, error } = await supabase
-    .from('match_data_with_team')
+    .from('match_data')
     .select('*')
-    .eq('team_number', Number(teamNumber))
-    .order('match_number', { ascending: true })
+    .eq('Team Number', Number(teamNumber))
+    .order('Scouting ID', { ascending: false })
 
   if (error) {
     console.error('Error fetching match data:', error)
@@ -31,13 +33,14 @@ const fetchMatches = async () => {
   setLoading(false)
 }
 
+  // call useEffect() whenever teamNumber changes
   useEffect(() => {
     fetchMatches()
   }, [teamNumber])
 
+  // todo
   const handleSaveNotes = () => {
     console.log(`Save notes for team ${teamNumber}:`, notes)
-    // Add Supabase insert/update logic here if needed
   }
 
   return (
@@ -59,7 +62,7 @@ const fetchMatches = async () => {
         </select>
       </div>
 
-
+      // make new table with rows by team number. add saved stuff to it
       <div style={{ marginBottom: '1rem' }}>
         <label>Notes:</label><br />
         <textarea
@@ -72,6 +75,7 @@ const fetchMatches = async () => {
 
       <button onClick={handleSaveNotes}>Save Notes</button>
 
+
       <div style={{ marginTop: '2rem' }}>
         <h2>Matches for Team {teamNumber}</h2>
         {loading ? (
@@ -82,7 +86,6 @@ const fetchMatches = async () => {
           <table border="1" cellPadding="6" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th>Match #</th>
                 <th>Scouting ID</th>
                 <th>L4 Count</th>
                 <th>Comments</th>
@@ -90,8 +93,7 @@ const fetchMatches = async () => {
             </thead>
             <tbody>
               {matchRows.map(row => (
-                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}>
-                  <td>{row.match_number}</td>
+                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}> // use team number dash match number in case of null
                   <td>{row["Scouting ID"]}</td>
                   <td>{row["L4 Count"]}</td>
                   <td>{row.Notes}</td>

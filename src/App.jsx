@@ -1,10 +1,10 @@
 // App.jsx
 import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
+import Layout from './pages/TopBar' // previously Home, now acts as layout
 import TeamData from './pages/TeamData'
 import { useState, useEffect } from 'react'
-import { supabase } from './supabaseClient' // adjust path if needed
+import { supabase } from './supabaseClient'
 
 function App() {
   const [instruments, setInstruments] = useState([]);
@@ -18,8 +18,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/team-data" element={<TeamData />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<TeamData />} />
+          <Route path="team-data" element={<TeamData />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )
