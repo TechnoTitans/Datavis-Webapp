@@ -62,7 +62,7 @@ const fetchMatches = async () => {
         </select>
       </div>
 
-      // make new table with rows by team number. add saved stuff to it
+      {/* make new table with rows by team number. add saved stuff to it*/}
       <div style={{ marginBottom: '1rem' }}>
         <label>Notes:</label><br />
         <textarea
@@ -93,7 +93,7 @@ const fetchMatches = async () => {
             </thead>
             <tbody>
               {matchRows.map(row => (
-                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}> // use team number dash match number in case of null
+                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}> {/*use team number dash match number in case of null*/}
                   <td>{row["Scouting ID"]}</td>
                   <td>{row["L4 Count"]}</td>
                   <td>{row.Notes}</td>
