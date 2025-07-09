@@ -7,22 +7,15 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 
 function App() {
-  const [instruments, setInstruments] = useState([]);
-  useEffect(() => {
-    getInstruments();
-  }, []);
-  async function getInstruments() {
-  const { data } = await supabase.from("instruments").select();
-  setInstruments(data);
-  }
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<TeamData />} />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<TeamData />} />
           <Route path="team-data" element={<TeamData />} />
-        </Route>
-      </Routes>
+          {/* Add more routes here as needed */}
+        </Routes>
+      </Layout>
     </BrowserRouter>
   )
 }

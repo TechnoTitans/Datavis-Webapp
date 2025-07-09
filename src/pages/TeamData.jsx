@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 
 function TeamData() {
@@ -9,34 +9,79 @@ function TeamData() {
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
 
-const fetchMatches = async () => {
-  if (!teamNumber) {
-    setMatchRows([])
-    return
+  const fetchMatches = async () => {
+    if (!teamNumber) {
+      setMatchRows([])
+      return
+    }
+
+    setLoading(true)
+
+    const { data, error } = await supabase
+      .from('match_data')
+      .select('*')
+      .eq('Team Number', Number(teamNumber))
+      .order('Scouting ID', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching match data:', error)
+      alert('Failed to load match data.')
+    } else {
+      setMatchRows(data)
+    }
+
+    setLoading(false)
   }
-
-  setLoading(true)
-
-  const { data, error } = await supabase
-    .from('match_data')
-    .select('*')
-    .eq('Team Number', Number(teamNumber))
-    .order('Scouting ID', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching match data:', error)
-    alert('Failed to load match data.')
-  } else {
-    setMatchRows(data)
-  }
-
-  setLoading(false)
-}
 
   // call useEffect() whenever teamNumber changes
   useEffect(() => {
     fetchMatches()
   }, [teamNumber])
+
+  // Compute summary data memoized to only recalc when matchRows changes
+  const summary = useMemo(() => {
+    if (!matchRows.length) return {}
+
+    const columns = Object.keys(matchRows[0])
+    const summaryResult = {}
+
+    for (const col of columns) {
+      // Find first non-null value to check type
+      const firstVal = matchRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
+
+      if (firstVal === undefined) continue
+
+      // Check if number (includes NaN-safe check)
+      const isNumber = typeof firstVal === 'number' && !isNaN(firstVal)
+
+      if (isNumber) {
+        // Average numeric column
+        const nums = matchRows
+          .map(r => r[col])
+          .filter(v => typeof v === 'number' && !isNaN(v))
+        const avg = nums.reduce((a, b) => a + b, 0) / nums.length
+        summaryResult[col] = { type: 'number', value: avg.toFixed(2) }
+      } else {
+        // Non-numeric: calculate mode and mode percentage
+        const freqMap = {}
+        for (const row of matchRows) {
+          const val = row[col]
+          if (val === null || val === undefined) continue
+          freqMap[val] = (freqMap[val] || 0) + 1
+        }
+        const entries = Object.entries(freqMap)
+        if (!entries.length) continue
+
+        entries.sort((a, b) => b[1] - a[1]) // sort descending by count
+        const [modeVal, count] = entries[0]
+        const percent = ((count / matchRows.length) * 100).toFixed(1)
+
+        summaryResult[col] = { type: 'string', value: modeVal, percent }
+      }
+    }
+
+    return summaryResult
+  }, [matchRows])
 
   // todo
   const handleSaveNotes = () => {
@@ -46,7 +91,6 @@ const fetchMatches = async () => {
   return (
     <div style={{ padding: '2rem' }}>
       <h1>Team Data</h1>
-
 
       <div style={{ marginBottom: '1rem' }}>
         <label>Select Team:&nbsp;</label>
@@ -62,6 +106,35 @@ const fetchMatches = async () => {
         </select>
       </div>
 
+      {/* Summary table */}
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Summary</h2>
+        {Object.keys(summary).length === 0 ? (
+          <p>No data to summarize.</p>
+        ) : (
+          <table border="1" cellPadding="6" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(summary).map(([col, info]) => (
+                <tr key={col}>
+                  <td>{col}</td>
+                  <td>
+                    {info.type === 'number'
+                      ? `Average: ${info.value}`
+                      : `Mode: ${info.value} (${info.percent}%)`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {/* make new table with rows by team number. add saved stuff to it*/}
       <div style={{ marginBottom: '1rem' }}>
         <label>Notes:</label><br />
@@ -74,7 +147,6 @@ const fetchMatches = async () => {
       </div>
 
       <button onClick={handleSaveNotes}>Save Notes</button>
-
 
       <div style={{ marginTop: '2rem' }}>
         <h2>Matches for Team {teamNumber}</h2>
@@ -93,7 +165,7 @@ const fetchMatches = async () => {
             </thead>
             <tbody>
               {matchRows.map(row => (
-                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}> {/*use team number dash match number in case of null*/}
+                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}>
                   <td>{row["Scouting ID"]}</td>
                   <td>{row["L4 Count"]}</td>
                   <td>{row.Notes}</td>

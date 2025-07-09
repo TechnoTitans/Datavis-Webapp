@@ -1,12 +1,12 @@
-// src/pages/Home.jsx
-import { useNavigate, Outlet } from 'react-router-dom'
+// src/pages/TopBar.jsx
+import { useNavigate } from 'react-router-dom'
 
-function Layout() {
+function Layout({ children }) {
   const navigate = useNavigate()
 
   return (
     <div>
-      <div className="top-bar">
+      <div className="top-bar" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f1f1f1' }}>
         <h1>1683 Visualizer</h1>
         <div className="button-wrapper">
           <button onClick={() => navigate('/team-data')}>Team Data</button>
@@ -14,7 +14,10 @@ function Layout() {
           <button onClick={() => navigate('/upload')}>Upload</button>
         </div>
       </div>
-      <Outlet />
+
+      <div style={{ padding: '2rem' }}>
+        {children}
+      </div>
     </div>
   )
 }
