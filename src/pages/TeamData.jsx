@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient'
 
 function TeamData() {
 
-  //useState() returns things: the team number and the function used to change it
+  // useState() returns things: the team number and the function used to change it
   const [teamNumber, setTeamNumber] = useState('254') // default selection
   const [notes, setNotes] = useState('')
   const [matchRows, setMatchRows] = useState([])
@@ -38,7 +38,7 @@ function TeamData() {
     fetchMatches()
   }, [teamNumber])
 
-  // Compute summary data memoized to only recalc when matchRows changes
+  // summary data memoized to only recalc when matchRows changes
   const summary = useMemo(() => {
     if (!matchRows.length) return {}
 
@@ -46,23 +46,23 @@ function TeamData() {
     const summaryResult = {}
 
     for (const col of columns) {
-      // Find first non-null value to check type
+      // find first defined value
       const firstVal = matchRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
 
       if (firstVal === undefined) continue
 
-      // Check if number (includes NaN-safe check)
+      // check if number
       const isNumber = typeof firstVal === 'number' && !isNaN(firstVal)
 
+      // uses average if row data type is number
       if (isNumber) {
-        // Average numeric column
         const nums = matchRows
           .map(r => r[col])
           .filter(v => typeof v === 'number' && !isNaN(v))
         const avg = nums.reduce((a, b) => a + b, 0) / nums.length
         summaryResult[col] = { type: 'number', value: avg.toFixed(2) }
       } else {
-        // Non-numeric: calculate mode and mode percentage
+        // use mode and percentage if not a number
         const freqMap = {}
         for (const row of matchRows) {
           const val = row[col]
@@ -72,7 +72,7 @@ function TeamData() {
         const entries = Object.entries(freqMap)
         if (!entries.length) continue
 
-        entries.sort((a, b) => b[1] - a[1]) // sort descending by count
+        entries.sort((a, b) => b[1] - a[1]) // sort descending by count. take first for mode
         const [modeVal, count] = entries[0]
         const percent = ((count / matchRows.length) * 100).toFixed(1)
 
