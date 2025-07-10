@@ -4,10 +4,25 @@ import { supabase } from '../supabaseClient'
 function TeamData() {
 
   // useState() returns things: the team number and the function used to change it
-  const [teamNumber, setTeamNumber] = useState('254') // default selection
+  const [allTeams, setAllTeams] = useState([])
+  const [teamNumber, setTeamNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
+
+  const fetchAllTeams = async () => {
+    const { data, error } = await supabase
+      .from('match_data')
+      .select('"Team Number"')
+
+    if (error) {
+      console.error('Error fetching team numbers:', error)
+      return
+    }
+
+    const uniqueTeams = [...new Set(data.map(row => row["Team Number"]))].sort((a, b) => a - b)
+    setAllTeams(uniqueTeams)
+  }
 
   const fetchMatches = async () => {
     if (!teamNumber) {
@@ -33,8 +48,14 @@ function TeamData() {
     setLoading(false)
   }
 
+  const onReload = async () => {
+    await fetchAllTeams()
+    await fetchMatches()
+  }
+
   // call useEffect() whenever teamNumber changes
   useEffect(() => {
+    fetchAllTeams()
     fetchMatches()
   }, [teamNumber])
 
@@ -97,12 +118,13 @@ function TeamData() {
         <select
           value={teamNumber}
           onChange={e => setTeamNumber(e.target.value)}
-          style={{ fontSize: '16px', padding: '4px 8px' }}
         >
-          <option value="254">254</option>
-          <option value="1678">1678</option>
-          <option value="1683">1683</option>
-          <option value="1690">1690</option>
+          <option value="" disabled>
+            None
+          </option>
+          {allTeams.map(team => (
+            <option key={team} value={team}>{team}</option>
+          ))}
         </select>
       </div>
 
