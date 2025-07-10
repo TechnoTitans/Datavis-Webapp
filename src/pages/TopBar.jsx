@@ -12,6 +12,7 @@ function Layout({ children }) {
           <button onClick={() => navigate('/team-data')}>Team Data</button>
           <button onClick={() => navigate('/compare')}>Compare</button>
           <button onClick={() => navigate('/upload')}>Upload</button>
+          <button onClick={() => navigate('/settings')}>Settings</button>
         </div>
       </div>
 

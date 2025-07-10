@@ -1,19 +1,3 @@
-const fieldsToShow = [
-  'L4 Count',
-  'L3 Count',
-  'L2 Count',
-  'L1 Count',
-  'Processor Count',
-  'Net Count',
-  'Use Data',
-  'Auton Leave',
-  'Auton Piece',
-  'Drive Speed',
-  'Defense',
-  'Notes',
-  // add or remove fields as required
-]
-
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 
@@ -226,6 +210,21 @@ function TeamData() {
       )
     }
   }
+
+  const fieldsToShow = [
+  'L4 Count',
+  'L3 Count',
+  'L2 Count',
+  'L1 Count',
+  'Processor Count',
+  'Net Count',
+  'Use Data',
+  'Auton Leave',
+  'Auton Piece',
+  'Drive Speed',
+  'Defense',
+  'Mechanical Reliability',
+]
 
   return (
     <div style={{ padding: '2rem' }}>
