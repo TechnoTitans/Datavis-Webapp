@@ -1,3 +1,19 @@
+const fieldsToShow = [
+  'L4 Count',
+  'L3 Count',
+  'L2 Count',
+  'L1 Count',
+  'Processor Count',
+  'Net Count',
+  'Use Data',
+  'Auton Leave',
+  'Auton Piece',
+  'Drive Speed',
+  'Defense',
+  'Notes',
+  // add or remove fields as required
+]
+
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 
@@ -5,11 +21,21 @@ function TeamData() {
 
   // useState() returns things: the team number and the function used to change it
   const [allTeams, setAllTeams] = useState([])
-  const [teamNumber, setTeamNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [teamNumber, setTeamNumber] = useState(() => {
+    return localStorage.getItem('selectedTeam') || ''
+  })
 
+  useEffect(() => {
+    // Save to localStorage whenever teamNumber changes
+    if (teamNumber) {
+      localStorage.setItem('selectedTeam', teamNumber)
+    }
+  }, [teamNumber])
+
+  // to change to just parse from scouting id
   const fetchAllTeams = async () => {
     const { data, error } = await supabase
       .from('match_data')
@@ -64,14 +90,83 @@ function TeamData() {
     return matchRows.filter(row => row['Use Data'] === true)
   }, [matchRows])
 
-  // summary data memoized to only recalc when usedRows changes
+  // summary data memoized to only recalc when usedRows or matchRows changes
   const summary = useMemo(() => {
     if (!usedRows.length) return {}
 
     const columns = Object.keys(usedRows[0])
     const summaryResult = {}
 
+    // Define scoring levels and their made/missed column names
+    const scoringLevels = [
+      { made: 'L4 Count', missed: 'L4 Missed Count' },
+      { made: 'L3 Count', missed: 'L3 Missed Count' },
+      { made: 'L2 Count', missed: 'L2 Missed Count' },
+      { made: 'L1 Count', missed: 'L1 Missed Count' },
+      { made: 'Processor Count', missed: 'Processor Missed Count' },
+      { made: 'Net Count', missed: 'Net Missed Count' },
+    ]
+
+    // Helper to check if a column is a missed column
+    const missedCols = new Set(scoringLevels.map(level => level.missed))
+
     for (const col of columns) {
+      if (missedCols.has(col)) {
+        // skip missed columns from direct output
+        continue
+      }
+
+      // Check if col is one of the made columns for scoring levels
+      const scoringLevel = scoringLevels.find(level => level.made === col)
+      if (scoringLevel) {
+        // Calculate total attempts and success rate for this scoring level
+        const madeVals = usedRows
+          .map(r => r[scoringLevel.made])
+          .filter(v => typeof v === 'number' && !isNaN(v))
+        const missedVals = usedRows
+          .map(r => r[scoringLevel.missed])
+          .filter(v => typeof v === 'number' && !isNaN(v))
+
+        const totalMade = madeVals.reduce((a, b) => a + b, 0)
+        const totalMissed = missedVals.reduce((a, b) => a + b, 0)
+        const totalAttempts = totalMade + totalMissed
+        const numRows = usedRows.length
+        // Compute average attempts per row
+        const avgAttempts = numRows > 0 ? totalAttempts / numRows : 0
+
+        if (totalAttempts === 0) {
+          // no attempts, skip output
+          continue
+        }
+
+        const successRate = (totalMade / totalAttempts) * 100
+        summaryResult[col] = {
+          type: 'scoring',
+          attempts: avgAttempts.toFixed(1), // now average attempts
+          successRate: successRate.toFixed(1),
+        }
+        continue
+      }
+
+      if (col === 'Use Data') {
+        // calculate mode and percentage based on all matchRows
+        const freqMap = {}
+        for (const row of matchRows) {
+          const val = row[col]
+          if (val === null || val === undefined) continue
+          freqMap[val] = (freqMap[val] || 0) + 1
+        }
+        const entries = Object.entries(freqMap)
+        if (!entries.length) continue
+
+        entries.sort((a, b) => b[1] - a[1]) // sort descending by count. take first for mode
+        const [modeVal, count] = entries[0]
+        const percent = ((count / matchRows.length) * 100).toFixed(1)
+
+        summaryResult[col] = { type: 'string', value: modeVal, percent }
+        continue
+      }
+
       // find first defined value
       const firstVal = usedRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
 
@@ -107,7 +202,7 @@ function TeamData() {
     }
 
     return summaryResult
-  }, [usedRows])
+  }, [usedRows, matchRows])
 
   // todo
   const handleSaveNotes = () => {
@@ -165,16 +260,20 @@ function TeamData() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(summary).map(([col, info]) => (
-                <tr key={col}>
-                  <td>{col}</td>
-                  <td>
-                    {info.type === 'number'
-                      ? `Average: ${info.value}`
-                      : `Mode: ${info.value} (${info.percent}%)`}
-                  </td>
-                </tr>
-              ))}
+              {fieldsToShow.map(field =>
+                summary[field] ? (
+                  <tr key={field}>
+                    <td>{field}</td>
+                    <td>
+                      {summary[field].type === 'number'
+                        ? `Average: ${summary[field].value}`
+                        : summary[field].type === 'scoring'
+                          ? `${summary[field].attempts} attempts, ${summary[field].successRate}% made`
+                          : `Mode: ${summary[field].value} (${summary[field].percent}%)`}
+                    </td>
+                  </tr>
+                ) : null
+              )}
             </tbody>
           </table>
         )}
@@ -203,15 +302,20 @@ function TeamData() {
           <table border="1" cellPadding="6" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                {/* Always render Use Data as the first column */}
                 <th>Use Data</th>
-                <th>Scouting ID</th>
-                <th>L4 Count</th>
-                <th>Comments</th>
+                {/* Dynamically render all other columns from the first row, excluding "Use Data" to avoid duplication */}
+                {Object.keys(matchRows[0])
+                  .filter(col => col !== 'Use Data')
+                  .map(col => (
+                    <th key={col}>{col}</th>
+                  ))}
               </tr>
             </thead>
             <tbody>
-              {matchRows.map(row => (
-                <tr key={row.id ?? `${row.team_number}-${row.match_number}`}>
+              {matchRows.map((row, idx) => (
+                <tr key={row["Scouting ID"] ?? row.id ?? idx}>
+                  {/* Use Data checkbox always first */}
                   <td>
                     <input
                       type="checkbox"
@@ -219,9 +323,16 @@ function TeamData() {
                       onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
                     />
                   </td>
-                  <td>{row["Scouting ID"]}</td>
-                  <td>{row["L4 Count"]}</td>
-                  <td>{row.Notes}</td>
+                  {/* Render other columns dynamically, convert boolean/null to string */}
+                  {Object.keys(matchRows[0])
+                    .filter(col => col !== 'Use Data')
+                    .map(col => {
+                      let val = row[col];
+                      if (typeof val === 'boolean' || val === null) {
+                        val = String(val);
+                      }
+                      return <td key={col}>{val}</td>
+                    })}
                 </tr>
               ))}
             </tbody>
