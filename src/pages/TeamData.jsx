@@ -35,7 +35,7 @@ function TeamData() {
     const { data, error } = await supabase
       .from('match_data')
       .select('*')
-      .eq('Team Number', Number(teamNumber))
+      .eq('"Team Number"', Number(teamNumber))
       .order('Scouting ID', { ascending: false })
 
     if (error) {
@@ -59,16 +59,21 @@ function TeamData() {
     fetchMatches()
   }, [teamNumber])
 
-  // summary data memoized to only recalc when matchRows changes
-  const summary = useMemo(() => {
-    if (!matchRows.length) return {}
+  // get usedRows by filtering matchRows
+  const usedRows = useMemo(() => {
+    return matchRows.filter(row => row['Use Data'] === true)
+  }, [matchRows])
 
-    const columns = Object.keys(matchRows[0])
+  // summary data memoized to only recalc when usedRows changes
+  const summary = useMemo(() => {
+    if (!usedRows.length) return {}
+
+    const columns = Object.keys(usedRows[0])
     const summaryResult = {}
 
     for (const col of columns) {
       // find first defined value
-      const firstVal = matchRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
+      const firstVal = usedRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
 
       if (firstVal === undefined) continue
 
@@ -77,7 +82,7 @@ function TeamData() {
 
       // uses average if row data type is number
       if (isNumber) {
-        const nums = matchRows
+        const nums = usedRows
           .map(r => r[col])
           .filter(v => typeof v === 'number' && !isNaN(v))
         const avg = nums.reduce((a, b) => a + b, 0) / nums.length
@@ -85,7 +90,7 @@ function TeamData() {
       } else {
         // use mode and percentage if not a number
         const freqMap = {}
-        for (const row of matchRows) {
+        for (const row of usedRows) {
           const val = row[col]
           if (val === null || val === undefined) continue
           freqMap[val] = (freqMap[val] || 0) + 1
@@ -95,18 +100,36 @@ function TeamData() {
 
         entries.sort((a, b) => b[1] - a[1]) // sort descending by count. take first for mode
         const [modeVal, count] = entries[0]
-        const percent = ((count / matchRows.length) * 100).toFixed(1)
+        const percent = ((count / usedRows.length) * 100).toFixed(1)
 
         summaryResult[col] = { type: 'string', value: modeVal, percent }
       }
     }
 
     return summaryResult
-  }, [matchRows])
+  }, [usedRows])
 
   // todo
   const handleSaveNotes = () => {
     console.log(`Save notes for team ${teamNumber}:`, notes)
+  }
+
+  const handleUseDataChange = async (scoutingId, checked) => {
+    const { error } = await supabase
+      .from('match_data')
+      .update({ 'Use Data': checked })
+      .eq('"Scouting ID"', scoutingId)
+
+    if (error) {
+      console.error('Error updating Use Data:', error)
+      alert('Failed to update Use Data field.')
+    } else {
+      setMatchRows(prevRows =>
+        prevRows.map(row =>
+          row["Scouting ID"] === scoutingId ? { ...row, 'Use Data': checked } : row
+        )
+      )
+    }
   }
 
   return (
@@ -180,6 +203,7 @@ function TeamData() {
           <table border="1" cellPadding="6" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th>Use Data</th>
                 <th>Scouting ID</th>
                 <th>L4 Count</th>
                 <th>Comments</th>
@@ -188,6 +212,13 @@ function TeamData() {
             <tbody>
               {matchRows.map(row => (
                 <tr key={row.id ?? `${row.team_number}-${row.match_number}`}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={!!row['Use Data']}
+                      onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
+                    />
+                  </td>
                   <td>{row["Scouting ID"]}</td>
                   <td>{row["L4 Count"]}</td>
                   <td>{row.Notes}</td>
