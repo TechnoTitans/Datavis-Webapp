@@ -409,7 +409,7 @@ function Compare() {
     }
     const result = {}
     for (const team in grouped) {
-      result[team] = grouped[team].map((row, idx) => {
+      result[team] = grouped[team].map((row) => {
         let made = 0, missed = 0, hasData = false;
         if (multiCols) {
           for (const level of multiCols) {
@@ -437,8 +437,19 @@ function Compare() {
           }
         }
         const attempts = made + missed;
+        
+        const getMatchNum = scoutingId => {
+          if (typeof scoutingId === "string") {
+            const parts = scoutingId.split('_')
+            if (parts.length > 2 && !isNaN(Number(parts[2]))) {
+              return Number(parts[2])
+            }
+          }
+          return 0
+        }
+        
         return {
-          match: idx + 1,
+          match: getMatchNum(row["Scouting ID"]),
           attempts: hasData ? attempts : null,
           successRate: hasData && attempts > 0 ? (made / attempts) * 100 : null,
           made: hasData ? made : null,
@@ -461,7 +472,8 @@ function Compare() {
   const AttemptsChart = ({ chartDataByTeam, selectedTeams }) => {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.attempts !== null))
     if (!hasData) return <p>No data for this field.</p>;
-    let max = 1, min = 0
+    
+    let max = 1, min = 0, maxMatch = 0
     for (const team of selectedTeams) {
       const arr = chartDataByTeam[team] || []
       arr.forEach(row => {
@@ -469,15 +481,23 @@ function Compare() {
           if (row.attempts > max) max = row.attempts
           if (row.attempts < min) min = row.attempts
         }
+        if (row.match > maxMatch) maxMatch = row.match
       })
     }
+    
     return (
       <div style={{ marginBottom: '2rem' }}>
         <h3>Attempts</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="match" label={{ value: "Match", position: "insideBottom", offset: -5 }} />
+            <XAxis 
+              dataKey="match" 
+              type="number"
+              scale="linear"
+              domain={[1, maxMatch]}
+              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+            />
             <YAxis
               label={{ value: "Attempts", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
@@ -506,13 +526,28 @@ function Compare() {
   const SuccessRateChart = ({ chartDataByTeam, selectedTeams }) => {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.successRate !== null))
     if (!hasData) return <p>No Success % data for this field.</p>;
+    
+    let maxMatch = 0
+    for (const team of selectedTeams) {
+      const arr = chartDataByTeam[team] || []
+      arr.forEach(row => {
+        if (row.match > maxMatch) maxMatch = row.match
+      })
+    }
+    
     return (
       <div style={{ marginBottom: '2rem' }}>
         <h3>Success %</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="match" label={{ value: "Match", position: "insideBottom", offset: -5 }} />
+            <XAxis 
+              dataKey="match" 
+              type="number"
+              scale="linear"
+              domain={[1, maxMatch]}
+              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+            />
             <YAxis
               label={{ value: "Success %", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
@@ -541,8 +576,9 @@ function Compare() {
   const MadeChart = ({ chartDataByTeam, selectedTeams }) => {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.made !== null))
     if (!hasData) return <p>No Made data for this field.</p>;
-    // Find max/min for Y axis across all teams
-    let max = 1, min = 0
+    
+    // Find max/min for Y axis and max match for X axis
+    let max = 1, min = 0, maxMatch = 0
     for (const team of selectedTeams) {
       const arr = chartDataByTeam[team] || []
       arr.forEach(row => {
@@ -550,15 +586,23 @@ function Compare() {
           if (row.made > max) max = row.made
           if (row.made < min) min = row.made
         }
+        if (row.match > maxMatch) maxMatch = row.match
       })
     }
+    
     return (
       <div style={{ marginBottom: '2rem' }}>
         <h3>Made</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="match" label={{ value: "Match", position: "insideBottom", offset: -5 }} />
+            <XAxis 
+              dataKey="match" 
+              type="number"
+              scale="linear"
+              domain={[1, maxMatch]}
+              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+            />
             <YAxis
               label={{ value: "Made", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
