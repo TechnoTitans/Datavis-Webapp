@@ -6,8 +6,8 @@ function Layout({ children }) {
 
   return (
     <div>
-      <div className="top-bar" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f1f1f1' }}>
-        <h1>1683 Visualizer</h1>
+      <div className="top-bar">
+        <h1>Data Vis</h1>
         <div className="button-wrapper">
           <button onClick={() => navigate('/team-data')}>Team Data</button>
           <button onClick={() => navigate('/compare')}>Compare</button>
