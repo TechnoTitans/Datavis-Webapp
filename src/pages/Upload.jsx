@@ -5,7 +5,6 @@ import QrScanner from 'qr-scanner'
 
 function Upload() {
   const [isScanning, setIsScanning] = useState(false)
-  const [scanResult, setScanResult] = useState('')
   const [parsedData, setParsedData] = useState(null)
   const [message, setMessage] = useState('')
   const [unconfirmedData, setUnconfirmedData] = useState([])
@@ -31,7 +30,6 @@ function Upload() {
     }
   }, [isAuthenticated])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopScanning()
@@ -45,16 +43,9 @@ function Upload() {
         .select('*')
 
       if (error) {
-        console.error('Error fetching unconfirmed data:', error)
-        console.error('Error code:', error.code)
-        console.error('Error details:', error.details)
-        console.error('Error hint:', error.hint)
         throw error
       }
       
-      console.log('Fetched unconfirmed data:', data)
-      console.log('Number of records:', data?.length || 0)
-      console.log('=== FETCH SUCCESS ===')
       setUnconfirmedData(data || [])
     } catch (error) {
       console.error('Error fetching unconfirmed data:', error)
@@ -67,43 +58,100 @@ function Upload() {
       setIsScanning(true)
       setMessage('Starting QR scanner...')
       
-      if (videoRef.current) {
-        // Create QR scanner instance
-        qrScannerRef.current = new QrScanner(
-          videoRef.current,
-          (result) => {
-            console.log('QR Code detected:', result.data)
-            setScanResult(result.data)
-            parseQRData(result.data)
-            stopScanning()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      if (!videoRef.current) {
+        throw new Error('Video element not available')
+      }
+      
+      if (qrScannerRef.current) {
+        qrScannerRef.current.stop()
+        qrScannerRef.current.destroy()
+        qrScannerRef.current = null
+      }
+      
+      qrScannerRef.current = new QrScanner(
+        videoRef.current,
+        result => {
+          parseQRData(result.data)
+          stopScanning()
+        },
+        {
+          onDecodeError: error => {
           },
-          {
-            preferredCamera: 'environment',
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-          }
-        )
-        
-        // Start scanning
+          preferredCamera: 'environment',
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          maxScansPerSecond: 5,
+        }
+      )
+      
+      try {
         await qrScannerRef.current.start()
         setMessage('QR scanner active. Point camera at QR code.')
-        console.log('QR scanner started successfully')
+      } catch (startError) {
+        if (startError.name === 'NotFoundError' || startError.name === 'OverconstrainedError') {
+          qrScannerRef.current.destroy()
+          
+          qrScannerRef.current = new QrScanner(
+            videoRef.current,
+            result => {
+              parseQRData(result.data)
+              stopScanning()
+            },
+            {
+              onDecodeError: error => {
+              },
+              preferredCamera: 'user',
+              highlightScanRegion: true,
+              highlightCodeOutline: true,
+              maxScansPerSecond: 5,
+            }
+          )
+          
+          await qrScannerRef.current.start()
+          setMessage('Scanning')
+        } else {
+          throw startError
+        }
       }
       
     } catch (error) {
       console.error('Error starting QR scanner:', error)
-      setMessage('Error starting QR scanner: ' + error.message + ' - You can use manual input below.')
+      let errorMessage = 'Error starting QR scanner: '
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Camera permission denied. Please allow camera access and try again.'
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No camera found. Please check your camera connection.'
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'Camera not supported in this browser. Try Chrome, Firefox, or Safari.'
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += 'Camera is already in use by another application.'
+      } else {
+        errorMessage += error.message
+      }
+      
+      setMessage(errorMessage + ' - Use manual input.')
       setIsScanning(false)
+      
+      if (qrScannerRef.current) {
+        qrScannerRef.current.destroy()
+        qrScannerRef.current = null
+      }
     }
   }
 
   const stopScanning = () => {
     setIsScanning(false)
     
-    // Stop QR scanner
     if (qrScannerRef.current) {
-      qrScannerRef.current.stop()
-      qrScannerRef.current.destroy()
+      try {
+        qrScannerRef.current.stop()
+        qrScannerRef.current.destroy()
+      } catch (error) {
+        console.error('Error stopping QR scanner:', error)
+      }
       qrScannerRef.current = null
     }
     
@@ -112,7 +160,6 @@ function Upload() {
 
   const handleManualInput = () => {
     if (manualInput.trim()) {
-      setScanResult(manualInput.trim())
       parseQRData(manualInput.trim())
       setManualInput('')
     }
@@ -156,7 +203,6 @@ function Upload() {
         _matchNumber: parseInt(lines[2])
       }
 
-      console.log('Parsed data structure:', data)
       setParsedData(data)
       setMessage('QR code parsed successfully!')
     } catch (error) {
@@ -173,7 +219,6 @@ function Upload() {
     }
 
     try {
-      // Remove display fields before inserting
       const { _teamNumber, _matchNumber, ...dataToInsert } = parsedData
       
       const { data, error } = await supabase
@@ -187,7 +232,6 @@ function Upload() {
       
       setMessage('Data uploaded successfully to unconfirmed_data!')
       setParsedData(null)
-      setScanResult('')
       
       if (isAuthenticated) {
         fetchUnconfirmedData()
@@ -233,14 +277,11 @@ function Upload() {
         'Use Data': true
       }
 
-      console.log('Inserting approved data into match_data:', matchData)
-
       const { error: insertError } = await supabase
         .from('match_data')
         .insert([matchData])
 
       if (insertError) {
-        console.error('Error inserting into match_data:', insertError)
         throw insertError
       }
 
@@ -250,7 +291,6 @@ function Upload() {
         .eq('"Scouting ID"', unconfirmedItem['Scouting ID'])
 
       if (deleteError) {
-        console.error('Error deleting from unconfirmed_data:', deleteError)
         throw deleteError
       }
 
@@ -306,9 +346,6 @@ function Upload() {
                 playsInline
                 muted
               />
-              <p className="video-instruction">
-                <strong>Point the QR code at the camera - it will scan automatically!</strong>
-              </p>
             </div>
           )}
         </div>
@@ -316,9 +353,6 @@ function Upload() {
         {/* Manual Input */}
         <div className="manual-input-section">
           <h4>Manual QR Data Input</h4>
-          <p className="manual-input-description">
-            Paste or type the QR code content here:
-          </p>
           <textarea
             value={manualInput}
             onChange={(e) => setManualInput(e.target.value)}
@@ -352,12 +386,8 @@ function Upload() {
               onClick={uploadToUnconfirmed}
               className="upload-button"
             >
-              Upload to Unconfirmed Data
+              Upload
             </button>
-            
-            <p className="upload-note">
-              Anyone can upload data - it will be reviewed before being approved.
-            </p>
           </div>
         )}
       </div>
@@ -399,18 +429,6 @@ function Upload() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {!isAuthenticated && (
-        <div className="info-panel blue">
-          <h3>Upload Complete!</h3>
-          <p><strong>Anyone can scan and upload QR codes.</strong></p>
-          <p>Your scanned data has been uploaded to the unconfirmed data queue.</p>
-          <p>Team admins will review and approve the data before it appears in the main dataset.</p>
-          <p className="info-panel-subtitle">
-            <em>Note: Enable database editing permissions in Settings to manage unconfirmed data.</em>
-          </p>
         </div>
       )}
     </div>
