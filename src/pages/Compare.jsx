@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import {
   LineChart,
@@ -11,12 +12,18 @@ import {
   ResponsiveContainer
 } from 'recharts'
 
+const MAX_MATCHES = 125
+
 function Compare() {
+  const navigate = useNavigate()
 
   // useState() returns things: the team number and the function used to change it
   const [allTeams, setAllTeams] = useState([])
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showTeamGrid, setShowTeamGrid] = useState(false)
+  const [expandedCells, setExpandedCells] = useState(new Set())
   // selectedTeams is an array of team numbers (as strings)
   const [selectedTeams, setSelectedTeams] = useState(() => {
     try {
@@ -145,8 +152,7 @@ function Compare() {
       const columns = Object.keys(teamRows[0])
       const summaryResult = {}
 
-      // Define scoring levels and their made/missed column names
-      const scoringLevels = [
+  const scoringLevels = [
         { made: 'L4 Count', missed: 'L4 Missed Count' },
         { made: 'L3 Count', missed: 'L3 Missed Count' },
         { made: 'L2 Count', missed: 'L2 Missed Count' },
@@ -158,7 +164,6 @@ function Compare() {
       // missedCols is Set of missed columns
       const missedCols = new Set(scoringLevels.map(level => level.missed))
 
-      // Compute Coral Cycles as total L4–L1 (made + missed), and Algae Cycles as Processor + Net (made + missed)
       let coralMade = 0, coralMissed = 0;
       let algaeMade = 0, algaeMissed = 0;
       for (const row of teamRows) {
@@ -225,7 +230,6 @@ function Compare() {
         }
       }
 
-      // Total Cycles (combination of Coral + Algae)
       const totalCycles = totalCoralCycles + totalAlgaeCycles;
       const totalMade = coralMade + algaeMade;
       const totalMissed = coralMissed + algaeMissed;
@@ -257,10 +261,8 @@ function Compare() {
           continue
         }
 
-        // set scoringLevel to the right scoring level
         const scoringLevel = scoringLevels.find(level => level.made === col)
         if (scoringLevel) {
-          // calculate total attempts and success rate for this scoring level
           const madeVals = teamRows
             .map(r => r[scoringLevel.made])
             .filter(v => typeof v === 'number' && !isNaN(v))
@@ -272,16 +274,10 @@ function Compare() {
           const totalMissed = missedVals.reduce((a, b) => a + b, 0)
           const totalAttempts = totalMade + totalMissed
           const numRows = teamRows.length
-          // find average made per row
           const avgMade = numRows > 0 ? totalMade / numRows : 0
-          // calculate average attempts per row
           const avgAttempts = numRows > 0 ? totalAttempts / numRows : 0
 
-          if (totalAttempts === 0) {
-            continue
-          }
-
-          const successRate = (totalMade / totalAttempts) * 100
+          const successRate = totalAttempts > 0 ? (totalMade / totalAttempts) * 100 : 0
           summaryResult[col] = {
             type: 'scoring',
             avgAttempts: avgAttempts,
@@ -301,15 +297,12 @@ function Compare() {
           continue
         }
         
-        // find first defined value
         const firstVal = teamRows.find(r => r[col] !== null && r[col] !== undefined)?.[col]
 
         if (firstVal === undefined) continue
 
-        // check if number
         const isNumber = typeof firstVal === 'number' && !isNaN(firstVal)
 
-        // uses average if row data type is number
         if (isNumber) {
           const nums = teamRows
             .map(r => r[col])
@@ -317,7 +310,6 @@ function Compare() {
           const avg = nums.reduce((a, b) => a + b, 0) / nums.length
           summaryResult[col] = { type: 'number', value: avg.toFixed(2) }
         } else {
-          // use mode and percentage if not a number
           const freqMap = {}
           for (const row of teamRows) {
             const val = row[col]
@@ -327,7 +319,7 @@ function Compare() {
           const entries = Object.entries(freqMap)
           if (!entries.length) continue
 
-          entries.sort((a, b) => b[1] - a[1]) // sort descending by count. take first for mode
+          entries.sort((a, b) => b[1] - a[1])
           const [modeVal, count] = entries[0]
           const percent = ((count / teamRows.length) * 100).toFixed(1)
 
@@ -351,16 +343,24 @@ function Compare() {
     'L1 Count',
     'Processor Count',
     'Net Count',
-    'Use Data',
     'Auton Leave',
     'Auton Piece',
-    'Drive Speed',
+    'Endgame Position',
+    'Driver Quality',
     'Defense',
     'Mechanical Reliability',
   ]
 
   // selected stat for chart
-  const [selectedStat, setSelectedStat] = useState('')
+  const [selectedStat, setSelectedStat] = useState(() => {
+    return localStorage.getItem('selectedStat') || ''
+  })
+
+  useEffect(() => {
+    if (selectedStat) {
+      localStorage.setItem('selectedStat', selectedStat)
+    }
+  }, [selectedStat])
 
 
   const buildStatChartData = (data, field) => {
@@ -473,7 +473,7 @@ function Compare() {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.attempts !== null))
     if (!hasData) return <p>No data for this field.</p>;
     
-    let max = 1, min = 0, maxMatch = 0
+    let max = 1, min = 0
     for (const team of selectedTeams) {
       const arr = chartDataByTeam[team] || []
       arr.forEach(row => {
@@ -481,7 +481,6 @@ function Compare() {
           if (row.attempts > max) max = row.attempts
           if (row.attempts < min) min = row.attempts
         }
-        if (row.match > maxMatch) maxMatch = row.match
       })
     }
     
@@ -495,16 +494,16 @@ function Compare() {
               dataKey="match" 
               type="number"
               scale="linear"
-              domain={[1, maxMatch]}
-              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+              domain={[1, MAX_MATCHES]}
+              ticks={Array.from({ length: Math.floor(MAX_MATCHES / 10) + 1 }, (_, i) => (i + 1) * 10).filter(tick => tick <= MAX_MATCHES)}
+              label={{ value: "Match", position: "insideBottomLeft", offset: -15, textAnchor: "start", dx: 60 }} 
             />
             <YAxis
-              label={{ value: "Attempts", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
               domain={[Math.min(0, min), Math.max(1, max)]}
             />
             <Tooltip />
-            <Legend />
+            <Legend style={{ marginTop: '20px' }} />
             {selectedTeams.map((team, i) => (
               <Line
                 key={team}
@@ -527,14 +526,6 @@ function Compare() {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.successRate !== null))
     if (!hasData) return <p>No Success % data for this field.</p>;
     
-    let maxMatch = 0
-    for (const team of selectedTeams) {
-      const arr = chartDataByTeam[team] || []
-      arr.forEach(row => {
-        if (row.match > maxMatch) maxMatch = row.match
-      })
-    }
-    
     return (
       <div style={{ marginBottom: '2rem' }}>
         <h3>Success %</h3>
@@ -545,16 +536,16 @@ function Compare() {
               dataKey="match" 
               type="number"
               scale="linear"
-              domain={[1, maxMatch]}
-              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+              domain={[1, MAX_MATCHES]}
+              ticks={Array.from({ length: Math.floor(MAX_MATCHES / 10) + 1 }, (_, i) => (i + 1) * 10).filter(tick => tick <= MAX_MATCHES)}
+              label={{ value: "Match", position: "insideBottomLeft", offset: -15, textAnchor: "start", dx: 60 }} 
             />
             <YAxis
-              label={{ value: "Success %", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
               domain={[0, 100]}
             />
             <Tooltip />
-            <Legend />
+            <Legend style={{ marginTop: '20px' }} />
             {selectedTeams.map((team, i) => (
               <Line
                 key={team}
@@ -577,8 +568,7 @@ function Compare() {
     const hasData = selectedTeams.some(team => (chartDataByTeam[team] || []).some(row => row.made !== null))
     if (!hasData) return <p>No Made data for this field.</p>;
     
-    // Find max/min for Y axis and max match for X axis
-    let max = 1, min = 0, maxMatch = 0
+    let max = 1, min = 0
     for (const team of selectedTeams) {
       const arr = chartDataByTeam[team] || []
       arr.forEach(row => {
@@ -586,7 +576,6 @@ function Compare() {
           if (row.made > max) max = row.made
           if (row.made < min) min = row.made
         }
-        if (row.match > maxMatch) maxMatch = row.match
       })
     }
     
@@ -600,16 +589,16 @@ function Compare() {
               dataKey="match" 
               type="number"
               scale="linear"
-              domain={[1, maxMatch]}
-              label={{ value: "Match", position: "insideBottom", offset: -5 }} 
+              domain={[1, MAX_MATCHES]}
+              ticks={Array.from({ length: Math.floor(MAX_MATCHES / 10) + 1 }, (_, i) => (i + 1) * 10).filter(tick => tick <= MAX_MATCHES)}
+              label={{ value: "Match", position: "insideBottomLeft", offset: -15, textAnchor: "start", dx: 60 }} 
             />
             <YAxis
-              label={{ value: "Made", angle: -90, position: "insideLeft" }}
               allowDecimals={true}
               domain={[Math.min(0, min), Math.max(1, max)]}
             />
             <Tooltip />
-            <Legend />
+            <Legend style={{ marginTop: '20px' }} />
             {selectedTeams.map((team, i) => (
               <Line
                 key={team}
@@ -628,44 +617,119 @@ function Compare() {
     );
   };
 
+  const handleTeamToggle = (teamNumber) => {
+    const teamStr = String(teamNumber)
+    setSelectedTeams(prev => {
+      if (prev.includes(teamStr)) {
+        return prev.filter(t => t !== teamStr)
+      } else {
+        return [...prev, teamStr]
+      }
+    })
+  }
+
+  const handleTeamClick = (teamNumber) => {
+    localStorage.setItem('selectedTeam', String(teamNumber))
+    navigate('/team-data')
+  }
+
+  const handleCellClick = (team, field) => {
+    const cellId = `${team}-${field}`
+    setExpandedCells(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(cellId)) {
+        newSet.delete(cellId)
+      } else {
+        newSet.add(cellId)
+      }
+      return newSet
+    })
+  }
+
+  const clearAllTeams = () => {
+    setSelectedTeams([])
+  }
+
+  const filteredTeams = allTeams.filter(team => 
+    String(team).toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <div className="compare-container">
       <h1>Team Data</h1>
 
       <div className="compare-team-selection">
-        <label>Select Teams:&nbsp;</label>
-        <select
-          className="compare-team-select"
-          multiple
-          size={Math.min(allTeams.length, 8)}
-          value={selectedTeams}
-          onChange={e => {
-            const options = Array.from(e.target.selectedOptions).map(opt => opt.value)
-            setSelectedTeams(options)
-          }}
-          style={{ minWidth: 300 }}
-        >
-          {allTeams.map(team => (
-            <option key={team} value={String(team)}>{team}</option>
-          ))}
-        </select>
-        <span style={{ marginLeft: '0.5rem', fontSize: '0.9em', color: '#666' }}>
-          (Hold Ctrl/Cmd to multi-select)
-        </span>
+        <div className={`team-selection-header ${!showTeamGrid ? 'team-selection-header-only' : ''}`}>
+          <h2>Select Teams to Compare</h2>
+          <button 
+            onClick={() => setShowTeamGrid(!showTeamGrid)}
+            className="toggle-grid-btn"
+          >
+            {showTeamGrid ? '▲ Hide Teams' : '▼ Show Teams'} ({selectedTeams.length} selected)
+          </button>
+        </div>
+
+        {showTeamGrid && (
+          <>
+            <div className="team-selection-controls">
+              <div className="search-container">
+                <input
+                  type="text"
+                  placeholder="Search teams..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="team-search-input"
+                />
+              </div>
+              
+              <div className="selection-actions">
+                <button onClick={clearAllTeams} className="action-btn clear-all">
+                  Clear All
+                </button>
+                <span className="selected-count">
+                  {selectedTeams.length} teams selected
+                </span>
+              </div>
+            </div>
+
+            <div className="teams-grid">
+              {filteredTeams.length === 0 ? (
+                <p className="no-teams">No teams found</p>
+              ) : (
+                filteredTeams.map(team => (
+                  <label key={team} className={`team-checkbox ${selectedTeams.includes(String(team)) ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTeams.includes(String(team))}
+                      onChange={() => handleTeamToggle(team)}
+                    />
+                    <span className="team-number">Team {team}</span>
+                    <span className="checkmark">✓</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Summary table */}
       <div style={{ marginTop: '2rem' }}>
         <h2>Summary</h2>
         {Object.keys(summary).length === 0 ? (
           <p>No data to summarize.</p>
         ) : (
-          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+          <div className="summary-container" data-count={selectedTeams.length}>
             {selectedTeams.map(team => (
               summary[team] ? (
-                <div key={team}>
-                  <h3>Team {team}</h3>
-                  <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse' }}>
+                <div key={team} className="summary-table">
+                  <h3 
+                    className="team-header-clickable" 
+                    onClick={() => handleTeamClick(team)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Team {team}
+                  </h3>
+                  <table>
                     <thead>
                       <tr>
                         <th>Field</th>
@@ -678,18 +742,42 @@ function Compare() {
                       {fieldsToShow.map(field =>
                         summary[team][field] ? (
                           <tr key={field}>
-                            <td>{field}</td>
+                            <td 
+                              className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
+                              onClick={() => handleCellClick(team, field)}
+                            >
+                              {field}
+                            </td>
                             {summary[team][field].type === 'scoring' ? (
                               <>
-                                <td>{summary[team][field].avgAttempts?.toFixed(2)}</td>
-                                <td>{summary[team][field].successRate}%</td>
-                                <td>{summary[team][field].average}</td>
+                                <td 
+                                  className={expandedCells.has(`${team}-${field}-attempts`) ? 'expanded' : ''}
+                                  onClick={() => handleCellClick(team, `${field}-attempts`)}
+                                >
+                                  {summary[team][field].avgAttempts?.toFixed(2)}
+                                </td>
+                                <td 
+                                  className={expandedCells.has(`${team}-${field}-success`) ? 'expanded' : ''}
+                                  onClick={() => handleCellClick(team, `${field}-success`)}
+                                >
+                                  {summary[team][field].successRate}%
+                                </td>
+                                <td 
+                                  className={expandedCells.has(`${team}-${field}-average`) ? 'expanded' : ''}
+                                  onClick={() => handleCellClick(team, `${field}-average`)}
+                                >
+                                  {summary[team][field].average}
+                                </td>
                               </>
                             ) : (
-                              <td colSpan={3}>
+                              <td 
+                                colSpan={3}
+                                className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
+                                onClick={() => handleCellClick(team, `${field}-value`)}
+                              >
                                 {summary[team][field].type === 'number'
                                   ? `Average: ${summary[team][field].value}`
-                                  : `Mode: ${summary[team][field].value} (${summary[team][field].percent}%)`}
+                                  : `${summary[team][field].value} (${summary[team][field].percent}%)`}
                               </td>
                             )}
                           </tr>

@@ -1,0 +1,86 @@
+/* Top Navigation Bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  margin: 0 auto 1rem auto;
+  width: 1200px;
+  max-width: calc(100% - 2rem);
+}
+
+.top-bar h1 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.button-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button-wrapper button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 500;
+}
+
+.button-wrapper button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design for TopBar */
+@media (max-width: 768px) {
+  .top-bar {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    padding: 1rem;
+    margin: 0 0 1rem 0;
+  }
+  
+  .button-wrapper {
+    justify-content: center;
+  }
+  
+  .button-wrapper button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .top-bar h1 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 0.5rem;
+  }
+  
+  .button-wrapper {
+    gap: 0.3rem;
+  }
+  
+  .button-wrapper button {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+}

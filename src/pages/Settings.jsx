@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import '../styles/settings.css'
+import '../styles/tables.css'
 
 function Settings() {
   const [databaseEditingPerms, setDatabaseEditingPerms] = useState(() => {
@@ -8,11 +10,37 @@ function Settings() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [pendingToggleValue, setPendingToggleValue] = useState(false)
+  const [unusedMatches, setUnusedMatches] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const ADMIN_PASSWORD = '0' // haha hardcoded password
   // its ridiculously hard to hide it well
   // jiayu is too lazy
   // rls is too hard
+
+  useEffect(() => {
+    fetchUnusedMatches()
+  }, [])
+
+  const fetchUnusedMatches = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('match_data')
+        .select('*')
+        .eq('Use Data', false)
+
+      if (error) {
+        throw error
+      }
+
+      setUnusedMatches(data)
+    } catch (error) {
+      console.error('Error fetching unused matches:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleToggleAttempt = (checked) => {
     if (checked && !databaseEditingPerms) {
@@ -41,6 +69,36 @@ function Settings() {
     setShowPasswordModal(false)
     setPasswordInput('')
     setPendingToggleValue(false)
+  }
+
+  const handleUseDataToggle = async (scoutingId, newValue) => {
+    if (!databaseEditingPerms) {
+      alert('Database editing permissions required to modify matches!')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('match_data')
+        .update({ 'Use Data': newValue })
+        .eq('"Scouting ID"', scoutingId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setUnusedMatches(prevMatches =>
+        prevMatches.map(match =>
+          match["Scouting ID"] === scoutingId ? { ...match, 'Use Data': newValue } : match
+        ).filter(match => !match['Use Data']) // Remove from list if enabled
+      )
+      
+      alert(`Match ${newValue ? 'enabled' : 'disabled'} successfully!`)
+    } catch (error) {
+      console.error('Error updating match:', error)
+      alert('Error updating match: ' + error.message)
+    }
   }
 
   return (
@@ -93,6 +151,73 @@ function Settings() {
           </div>
         </div>
       )}
+
+      {/* Unused Matches Section */}
+      <div className="settings-section">
+        <h3>Unused Data</h3>
+
+        {loading ? (
+          <p>Loading unused matches...</p>
+        ) : (
+          <div className="team-data-table-container">
+            <table>
+              <thead>
+                <tr>
+                  {/* Always render Use Data as the first column */}
+                  <th>Use Data</th>
+                  {/* Dynamically render all other columns from the first row, excluding "Use Data" to avoid duplication */}
+                  {unusedMatches.length > 0 && Object.keys(unusedMatches[0])
+                    .filter(col => col !== 'Use Data')
+                    .map(col => (
+                      <th key={col}>{col}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {unusedMatches.length === 0 ? (
+                  <tr>
+                    <td colSpan="100%" style={{ textAlign: 'center', fontStyle: 'italic', color: '#888' }}>
+                      No unused data.
+                    </td>
+                  </tr>
+                ) : (
+                  unusedMatches.map((row, idx) => (
+                    <tr key={row["Scouting ID"] ?? row.id ?? idx}>
+                      {/* Use Data checkbox always first */}
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={!!row['Use Data']}
+                          onChange={e => handleUseDataToggle(row["Scouting ID"], e.target.checked)}
+                          disabled={!databaseEditingPerms}
+                        />
+                      </td>
+                      {/* Render other columns dynamically, convert boolean/null to string */}
+                      {Object.keys(unusedMatches[0])
+                        .filter(col => col !== 'Use Data')
+                        .map(col => {
+                          let val = row[col];
+                          if (typeof val === 'boolean' || val === null) {
+                            val = String(val);
+                          }
+                          const displayVal = String(val);
+                          return (
+                            <td 
+                              key={col} 
+                              title={displayVal.length > 15 ? displayVal : undefined}
+                            >
+                              {displayVal}
+                            </td>
+                          )
+                        })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

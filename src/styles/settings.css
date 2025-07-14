@@ -1,0 +1,164 @@
+/* Settings Page Styles */
+.settings-section {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.setting-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.switch-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #e0e0e0;
+}
+
+.setting-description {
+  font-size: 0.9rem;
+  color: #b0b0b0;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+/* Toggle Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Password Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  min-width: 400px;
+  text-align: center;
+  border: 1px solid #4a4a4a;
+}
+
+.modal h3 {
+  margin-top: 0;
+  color: #e0e0e0;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin: 1rem 0;
+  box-sizing: border-box;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.btn-confirm, .btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-confirm:hover, .btn-cancel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
