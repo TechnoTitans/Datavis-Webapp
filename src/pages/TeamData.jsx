@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { executeWithPermission } from '../utils/permissions'
 
 function TeamData() {
 
   // useState() returns things: the team number and the function used to change it
   const [allTeams, setAllTeams] = useState([])
-  const [notes, setNotes] = useState('')
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [teamNumber, setTeamNumber] = useState(() => {
@@ -116,20 +116,32 @@ function TeamData() {
   }
 
   const handleUseDataChange = async (scoutingId, checked) => {
-    const { error } = await supabase
-      .from('match_data')
-      .update({ 'Use Data': checked })
-      .eq('"Scouting ID"', scoutingId)
+    console.log('handleUseDataChange called:', { scoutingId, checked })
+    try {
+      await executeWithPermission(async () => {
+        console.log('Permission granted, updating database...')
+        const { error, data } = await supabase
+          .from('match_data')
+          .update({ 'Use Data': checked })
+          .eq('"Scouting ID"', scoutingId)
+          .select()
 
-    if (error) {
-      console.error('Error updating Use Data:', error)
-      alert('Failed to update Use Data field.')
-    } else {
-      setMatchRows(prevRows =>
-        prevRows.map(row =>
-          row["Scouting ID"] === scoutingId ? { ...row, 'Use Data': checked } : row
-        )
-      )
+        console.log('Database update result:', { error, data })
+        
+        if (error) {
+          console.error('Error updating Use Data:', error)
+          alert('Failed to update Use Data field.')
+        } else {
+          console.log('Database updated successfully')
+          setMatchRows(prevRows =>
+            prevRows.map(row =>
+              row["Scouting ID"] === scoutingId ? { ...row, 'Use Data': checked } : row
+            )
+          )
+        }
+      })
+    } catch (error) {
+      console.log('Permission denied or error:', error.message)
     }
   }
 
@@ -152,19 +164,6 @@ function TeamData() {
         </select>
       </div>
 
-      {/* make new table with rows by team number. add saved stuff to it*/}
-      <div style={{ marginBottom: '1rem' }}>
-        <label>Notes:</label><br />
-        <textarea
-          rows="4"
-          cols="60"
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-        />
-      </div>
-
-      <button onClick={handleSaveNotes}>Save Notes</button>
-
       <div style={{ marginTop: '2rem' }}>
         <h2>Matches for Team {teamNumber}</h2>
         {loading ? (
@@ -172,44 +171,54 @@ function TeamData() {
         ) : matchRows.length === 0 ? (
           <p>No matches found.</p>
         ) : (
-          <table border="1" cellPadding="6" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                {/* Always render Use Data as the first column */}
-                <th>Use Data</th>
-                {/* Dynamically render all other columns from the first row, excluding "Use Data" to avoid duplication */}
-                {Object.keys(matchRows[0])
-                  .filter(col => col !== 'Use Data')
-                  .map(col => (
-                    <th key={col}>{col}</th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {matchRows.map((row, idx) => (
-                <tr key={row["Scouting ID"] ?? row.id ?? idx}>
-                  {/* Use Data checkbox always first */}
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!!row['Use Data']}
-                      onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
-                    />
-                  </td>
-                  {/* Render other columns dynamically, convert boolean/null to string */}
+          <div className="team-data-table-container">
+            <table>
+              <thead>
+                <tr>
+                  {/* Always render Use Data as the first column */}
+                  <th>Use Data</th>
+                  {/* Dynamically render all other columns from the first row, excluding "Use Data" to avoid duplication */}
                   {Object.keys(matchRows[0])
                     .filter(col => col !== 'Use Data')
-                    .map(col => {
-                      let val = row[col];
-                      if (typeof val === 'boolean' || val === null) {
-                        val = String(val);
-                      }
-                      return <td key={col}>{val}</td>
-                    })}
+                    .map(col => (
+                      <th key={col}>{col}</th>
+                    ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {matchRows.map((row, idx) => (
+                  <tr key={row["Scouting ID"] ?? row.id ?? idx}>
+                    {/* Use Data checkbox always first */}
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={!!row['Use Data']}
+                        onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
+                      />
+                    </td>
+                    {/* Render other columns dynamically, convert boolean/null to string */}
+                    {Object.keys(matchRows[0])
+                      .filter(col => col !== 'Use Data')
+                      .map(col => {
+                        let val = row[col];
+                        if (typeof val === 'boolean' || val === null) {
+                          val = String(val);
+                        }
+                        const displayVal = String(val);
+                        return (
+                          <td 
+                            key={col} 
+                            title={displayVal.length > 15 ? displayVal : undefined}
+                          >
+                            {displayVal}
+                          </td>
+                        )
+                      })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

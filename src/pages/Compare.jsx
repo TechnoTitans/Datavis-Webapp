@@ -629,12 +629,13 @@ function Compare() {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div className="compare-container">
       <h1>Team Data</h1>
 
-      <div style={{ marginBottom: '1rem' }}>
+      <div className="compare-team-selection">
         <label>Select Teams:&nbsp;</label>
         <select
+          className="compare-team-select"
           multiple
           size={Math.min(allTeams.length, 8)}
           value={selectedTeams}
@@ -642,7 +643,7 @@ function Compare() {
             const options = Array.from(e.target.selectedOptions).map(opt => opt.value)
             setSelectedTeams(options)
           }}
-          style={{ minWidth: 120 }}
+          style={{ minWidth: 300 }}
         >
           {allTeams.map(team => (
             <option key={team} value={String(team)}>{team}</option>
