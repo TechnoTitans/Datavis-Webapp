@@ -6,9 +6,9 @@
 }
 
 .top-bar{
-  display: 'flex';
-  padding: '1rem';
-  background: '#f1f1f1'
+  display: flex;
+  padding: 1rem;
+  background: #0078e2;
 }
 
 .button-wrapper {
