@@ -662,7 +662,7 @@ function Compare() {
 
   return (
     <div className="compare-container">
-      <h1>Team Data</h1>
+      <h1>Compare Data</h1>
 
       <div className="compare-team-selection">
         <div className={`team-selection-header ${!showTeamGrid ? 'team-selection-header-only' : ''}`}>
