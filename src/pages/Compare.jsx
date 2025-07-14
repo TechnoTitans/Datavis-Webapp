@@ -767,7 +767,7 @@ function Compare() {
       </div>
 
       <div style={{ marginTop: '1rem' }}>
-        <h2>Charts for {selectedStat}</h2>
+        <h2 style={{ marginTop: '2.5rem' }}>Charts for {selectedStat}</h2>
         {(() => {
           if (!matchRows || matchRows.length === 0) return <p>No data for chart.</p>;
           if (!selectedStat) return <p>Select a stat to view charts.</p>;
