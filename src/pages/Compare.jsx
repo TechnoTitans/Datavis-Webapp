@@ -22,7 +22,9 @@ function Compare() {
   const [matchRows, setMatchRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [statSearchTerm, setStatSearchTerm] = useState('')
   const [showTeamGrid, setShowTeamGrid] = useState(false)
+  const [showStatGrid, setShowStatGrid] = useState(false)
   const [expandedCells, setExpandedCells] = useState(new Set())
   // selectedTeams is an array of team numbers (as strings)
   const [selectedTeams, setSelectedTeams] = useState(() => {
@@ -654,6 +656,10 @@ function Compare() {
     String(team).toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const filteredStats = fieldsToShow.filter(stat => 
+    stat.toLowerCase().includes(statSearchTerm.toLowerCase())
+  )
+
   return (
     <div className="compare-container">
       <h1>Team Data</h1>
@@ -713,8 +719,83 @@ function Compare() {
         )}
       </div>
 
+      <div className="compare-stat-selection">
+        <div className={`stat-selection-header ${!showStatGrid ? 'stat-selection-header-only' : ''}`}>
+          <h2>Select Stat for Charts</h2>
+          <button 
+            onClick={() => setShowStatGrid(!showStatGrid)}
+            className="toggle-grid-btn"
+          >
+            {showStatGrid ? '▲ Hide Dropdown' : '▼ Show Dropdown'}
+          </button>
+        </div>
+
+        {showStatGrid && (
+          <>
+            <div className="stat-selection-controls">
+              <div className="search-container">
+                <input
+                  type="text"
+                  placeholder="Search stats..."
+                  value={statSearchTerm}
+                  onChange={(e) => setStatSearchTerm(e.target.value)}
+                  className="stat-search-input"
+                />
+              </div>
+            </div>
+
+            <div className="stats-grid">
+              {filteredStats.length === 0 ? (
+                <p className="no-stats">No stats found</p>
+              ) : (
+                filteredStats.map(field => (
+                  <label key={field} className={`stat-checkbox ${selectedStat === field ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="selectedStat"
+                      checked={selectedStat === field}
+                      onChange={() => setSelectedStat(field)}
+                    />
+                    <span className="stat-name">{field}</span>
+                    <span className="checkmark">✓</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        <h2>Charts for {selectedStat}</h2>
+        {(() => {
+          if (!matchRows || matchRows.length === 0) return <p>No data for chart.</p>;
+          if (!selectedStat) return <p>Select a stat to view charts.</p>;
+          
+          const firstTeamSummary = Object.values(summary)[0];
+          const selectedSummary = firstTeamSummary && firstTeamSummary[selectedStat];
+          
+          if (!selectedSummary || selectedSummary.type !== 'scoring') {
+            return <p>Charts only available for scoring-type fields.</p>;
+          }
+          
+          const chartDataByTeam = buildStatChartData(matchRows, selectedStat);
+          const hasAny = selectedTeams.some(team =>
+            (chartDataByTeam[team] || []).some(row => row.attempts !== null || row.successRate !== null || row.made !== null)
+          );
+          if (!hasAny) return <p>No numeric data for field "{selectedStat}".</p>;
+          return (
+            <>
+              <AttemptsChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+              <SuccessRateChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+              <MadeChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+            </>
+          );
+        })()}
+      </div>
+
       <div style={{ marginTop: '2rem' }}>
-        <h2>Summary</h2>
+        <h2>Summaries</h2>
         {Object.keys(summary).length === 0 ? (
           <p>No data to summarize.</p>
         ) : (
@@ -790,47 +871,6 @@ function Compare() {
             ))}
           </div>
         )}
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        <label htmlFor="stat-select">Select Stat:&nbsp;</label>
-        <select
-          id="stat-select"
-          value={selectedStat}
-          onChange={e => setSelectedStat(e.target.value)}
-        >
-          <option value="">Select a stat...</option>
-          {fieldsToShow.map(field => (
-            <option key={field} value={field}>{field}</option>
-          ))}
-        </select>
-      </div>
-      <div style={{ marginTop: '1rem' }}>
-        <h2>Charts for {selectedStat}</h2>
-        {(() => {
-          if (!matchRows || matchRows.length === 0) return <p>No data for chart.</p>;
-          if (!selectedStat) return <p>Select a stat to view charts.</p>;
-          
-          const firstTeamSummary = Object.values(summary)[0];
-          const selectedSummary = firstTeamSummary && firstTeamSummary[selectedStat];
-          
-          if (!selectedSummary || selectedSummary.type !== 'scoring') {
-            return <p>Charts only available for scoring-type fields.</p>;
-          }
-          
-          const chartDataByTeam = buildStatChartData(matchRows, selectedStat);
-          const hasAny = selectedTeams.some(team =>
-            (chartDataByTeam[team] || []).some(row => row.attempts !== null || row.successRate !== null || row.made !== null)
-          );
-          if (!hasAny) return <p>No numeric data for field "{selectedStat}".</p>;
-          return (
-            <>
-              <AttemptsChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
-              <SuccessRateChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
-              <MadeChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
-            </>
-          );
-        })()}
       </div>
     </div>
   )
