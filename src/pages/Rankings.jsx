@@ -8,10 +8,11 @@ function Rankings() {
   const [sortOrder, setSortOrder] = useState('desc')
   const [error, setError] = useState('')
   const [useAttempts, setUseAttempts] = useState(false)
+  const [useMax, setUseMax] = useState(false)
 
   useEffect(() => {
     fetchTeamStats()
-  }, [useAttempts])
+  }, [useAttempts, useMax])
 
   const fetchTeamStats = async () => {
     try {
@@ -48,9 +49,24 @@ function Rankings() {
             avgDefenseAbility: 0,
             avgMechanicalReliability: 0,
             avgAlgaeDescorability: 0,
+            maxCycles: 0,
+            maxCoralCycles: 0,
+            maxAlgaeCycles: 0,
+            maxL4: 0,
+            maxL3: 0,
+            maxL2: 0,
+            maxL1: 0,
+            maxProcessor: 0,
+            maxNet: 0,
+            maxDriverQuality: 0,
+            maxDefenseAbility: 0,
+            maxMechanicalReliability: 0,
+            maxAlgaeDescorability: 0,
             totalMissed: 0,
             accuracy: 0,
+            maxAccuracy: 0,
             endgameAverage: 0,
+            maxEndgame: 0,
             endgameStats: {
               hanging: 0,
               parking: 0,
@@ -89,6 +105,21 @@ function Rankings() {
         team.avgMechanicalReliability += match['Mechanical Reliability'] || 0
         team.avgAlgaeDescorability += match['Algae Descorability'] || 0
 
+        // Track max values
+        team.maxCycles = Math.max(team.maxCycles, totalCycles)
+        team.maxCoralCycles = Math.max(team.maxCoralCycles, coralCycles)
+        team.maxAlgaeCycles = Math.max(team.maxAlgaeCycles, algaeCycles)
+        team.maxL4 = Math.max(team.maxL4, l4Count)
+        team.maxL3 = Math.max(team.maxL3, l3Count)
+        team.maxL2 = Math.max(team.maxL2, l2Count)
+        team.maxL1 = Math.max(team.maxL1, l1Count)
+        team.maxProcessor = Math.max(team.maxProcessor, processorCount)
+        team.maxNet = Math.max(team.maxNet, netCount)
+        team.maxDriverQuality = Math.max(team.maxDriverQuality, match['Driver Quality'] || 0)
+        team.maxDefenseAbility = Math.max(team.maxDefenseAbility, match['Defense Ability'] || 0)
+        team.maxMechanicalReliability = Math.max(team.maxMechanicalReliability, match['Mechanical Reliability'] || 0)
+        team.maxAlgaeDescorability = Math.max(team.maxAlgaeDescorability, match['Algae Descorability'] || 0)
+
         const totalShots = (match['L4 Count'] || 0) + (match['L3 Count'] || 0) + 
                           (match['L2 Count'] || 0) + (match['L1 Count'] || 0) + 
                           (match['Processor Count'] || 0) + (match['Net Count'] || 0)
@@ -97,6 +128,11 @@ function Rankings() {
                            (match['Processor Missed Count'] || 0) + (match['Net Missed Count'] || 0)
         
         team.totalMissed += totalMissed
+
+        // Calculate accuracy for this match
+        const matchAttempts = totalShots + totalMissed
+        const matchAccuracy = matchAttempts > 0 ? (totalShots / matchAttempts * 100) : 0
+        team.maxAccuracy = Math.max(team.maxAccuracy, matchAccuracy)
 
         const endgame = match['Endgame Position']?.toLowerCase()
         let endgamePoints = 0
@@ -116,28 +152,51 @@ function Rankings() {
         }
         
         team.endgameAverage += endgamePoints
+        team.maxEndgame = Math.max(team.maxEndgame, endgamePoints)
       })
 
       const teamStatsArray = Array.from(teamStatsMap.values()).map(team => {
-        team.avgCycles = Math.round(team.avgCycles / team.matchCount * 10) / 10
-        team.avgCoralCycles = Math.round(team.avgCoralCycles / team.matchCount * 10) / 10
-        team.avgAlgaeCycles = Math.round(team.avgAlgaeCycles / team.matchCount * 10) / 10
-        team.avgL4 = Math.round(team.avgL4 / team.matchCount * 10) / 10
-        team.avgL3 = Math.round(team.avgL3 / team.matchCount * 10) / 10
-        team.avgL2 = Math.round(team.avgL2 / team.matchCount * 10) / 10
-        team.avgL1 = Math.round(team.avgL1 / team.matchCount * 10) / 10
-        team.avgProcessor = Math.round(team.avgProcessor / team.matchCount * 10) / 10
-        team.avgNet = Math.round(team.avgNet / team.matchCount * 10) / 10
-        team.avgDriverQuality = Math.round(team.avgDriverQuality / team.matchCount * 10) / 10
-        team.avgDefenseAbility = Math.round(team.avgDefenseAbility / team.matchCount * 10) / 10
-        team.avgMechanicalReliability = Math.round(team.avgMechanicalReliability / team.matchCount * 10) / 10
-        team.avgAlgaeDescorability = Math.round(team.avgAlgaeDescorability / team.matchCount * 10) / 10
-        team.endgameAverage = Math.round(team.endgameAverage / team.matchCount * 10) / 10
-
-        const totalAttempts = team.avgL4 * team.matchCount + team.avgL3 * team.matchCount + 
-                             team.avgL2 * team.matchCount + team.avgL1 * team.matchCount + 
-                             team.avgProcessor * team.matchCount + team.avgNet * team.matchCount + team.totalMissed
-        team.accuracy = totalAttempts > 0 ? Math.round((totalAttempts - team.totalMissed) / totalAttempts * 1000) / 10 : 0
+        if (useMax) {
+          // When using max, we don't need to divide by matchCount
+          team.avgCycles = team.maxCycles
+          team.avgCoralCycles = team.maxCoralCycles
+          team.avgAlgaeCycles = team.maxAlgaeCycles
+          team.avgL4 = team.maxL4
+          team.avgL3 = team.maxL3
+          team.avgL2 = team.maxL2
+          team.avgL1 = team.maxL1
+          team.avgProcessor = team.maxProcessor
+          team.avgNet = team.maxNet
+          team.avgDriverQuality = team.maxDriverQuality
+          team.avgDefenseAbility = team.maxDefenseAbility
+          team.avgMechanicalReliability = team.maxMechanicalReliability
+          team.avgAlgaeDescorability = team.maxAlgaeDescorability
+        } else {
+          // Calculate averages as before
+          team.avgCycles = Math.round(team.avgCycles / team.matchCount * 10) / 10
+          team.avgCoralCycles = Math.round(team.avgCoralCycles / team.matchCount * 10) / 10
+          team.avgAlgaeCycles = Math.round(team.avgAlgaeCycles / team.matchCount * 10) / 10
+          team.avgL4 = Math.round(team.avgL4 / team.matchCount * 10) / 10
+          team.avgL3 = Math.round(team.avgL3 / team.matchCount * 10) / 10
+          team.avgL2 = Math.round(team.avgL2 / team.matchCount * 10) / 10
+          team.avgL1 = Math.round(team.avgL1 / team.matchCount * 10) / 10
+          team.avgProcessor = Math.round(team.avgProcessor / team.matchCount * 10) / 10
+          team.avgNet = Math.round(team.avgNet / team.matchCount * 10) / 10
+          team.avgDriverQuality = Math.round(team.avgDriverQuality / team.matchCount * 10) / 10
+          team.avgDefenseAbility = Math.round(team.avgDefenseAbility / team.matchCount * 10) / 10
+          team.avgMechanicalReliability = Math.round(team.avgMechanicalReliability / team.matchCount * 10) / 10
+          team.avgAlgaeDescorability = Math.round(team.avgAlgaeDescorability / team.matchCount * 10) / 10
+        }
+        
+        if (useMax) {
+          team.endgameAverage = team.maxEndgame
+          team.accuracy = Math.round(team.maxAccuracy * 10) / 10
+        } else {
+          team.endgameAverage = Math.round(team.endgameAverage / team.matchCount * 10) / 10
+          
+          const totalAttempts = team.avgCycles * team.matchCount + team.totalMissed
+          team.accuracy = totalAttempts > 0 ? Math.round((totalAttempts - team.totalMissed) / totalAttempts * 1000) / 10 : 0
+        }
 
         return team
       })
@@ -207,14 +266,24 @@ function Rankings() {
     <div className="rankings-container">
       <h2>Team Rankings</h2>
       <div className="rankings-controls">
-        <label className="toggle-container">
-          <input
-            type="checkbox"
-            checked={useAttempts}
-            onChange={(e) => setUseAttempts(e.target.checked)}
-          />
-          <span className="toggle-text">Show All Attempts (Made + Missed)</span>
-        </label>
+        <div className="checkbox-container">
+          <label className="toggle-container">
+            <input
+              type="checkbox"
+              checked={useAttempts}
+              onChange={(e) => setUseAttempts(e.target.checked)}
+            />
+            <span className="toggle-text">Show All Attempts (Made + Missed)</span>
+          </label>
+          <label className="toggle-container">
+            <input
+              type="checkbox"
+              checked={useMax}
+              onChange={(e) => setUseMax(e.target.checked)}
+            />
+            <span className="toggle-text">Show Max Values (instead of Average)</span>
+          </label>
+        </div>
       </div>
       {teamStats.length === 0 ? (
         <p>No team data available. Upload some match data first!</p>
@@ -229,90 +298,90 @@ function Rankings() {
                 </th>
                 {sortBy !== 'teamNumber' && (
                   <th onClick={() => handleSort(sortBy)} className="sortable" style={{ backgroundColor: '#4a5568', fontWeight: 'bold' }}>
-                    {sortBy === 'avgCycles' && `Avg Cycles ${getSortIcon('avgCycles')}`}
-                    {sortBy === 'avgCoralCycles' && `Avg Coral Cycles ${getSortIcon('avgCoralCycles')}`}
-                    {sortBy === 'avgAlgaeCycles' && `Avg Algae Cycles ${getSortIcon('avgAlgaeCycles')}`}
-                    {sortBy === 'avgL4' && `Avg L4 ${getSortIcon('avgL4')}`}
-                    {sortBy === 'avgL3' && `Avg L3 ${getSortIcon('avgL3')}`}
-                    {sortBy === 'avgL2' && `Avg L2 ${getSortIcon('avgL2')}`}
-                    {sortBy === 'avgL1' && `Avg L1 ${getSortIcon('avgL1')}`}
-                    {sortBy === 'avgProcessor' && `Avg Processor ${getSortIcon('avgProcessor')}`}
-                    {sortBy === 'avgNet' && `Avg Net ${getSortIcon('avgNet')}`}
-                    {sortBy === 'accuracy' && `Accuracy % ${getSortIcon('accuracy')}`}
-                    {sortBy === 'endgameAverage' && `Endgame Average ${getSortIcon('endgameAverage')}`}
-                    {sortBy === 'avgDriverQuality' && `Driver ${getSortIcon('avgDriverQuality')}`}
-                    {sortBy === 'avgDefenseAbility' && `Defense ${getSortIcon('avgDefenseAbility')}`}
-                    {sortBy === 'avgMechanicalReliability' && `Reliability ${getSortIcon('avgMechanicalReliability')}`}
+                    {sortBy === 'avgCycles' && `${useMax ? 'Max' : 'Avg'} Cycles ${getSortIcon('avgCycles')}`}
+                    {sortBy === 'avgCoralCycles' && `${useMax ? 'Max' : 'Avg'} Coral Cycles ${getSortIcon('avgCoralCycles')}`}
+                    {sortBy === 'avgAlgaeCycles' && `${useMax ? 'Max' : 'Avg'} Algae Cycles ${getSortIcon('avgAlgaeCycles')}`}
+                    {sortBy === 'avgL4' && `${useMax ? 'Max' : 'Avg'} L4 ${getSortIcon('avgL4')}`}
+                    {sortBy === 'avgL3' && `${useMax ? 'Max' : 'Avg'} L3 ${getSortIcon('avgL3')}`}
+                    {sortBy === 'avgL2' && `${useMax ? 'Max' : 'Avg'} L2 ${getSortIcon('avgL2')}`}
+                    {sortBy === 'avgL1' && `${useMax ? 'Max' : 'Avg'} L1 ${getSortIcon('avgL1')}`}
+                    {sortBy === 'avgProcessor' && `${useMax ? 'Max' : 'Avg'} Processor ${getSortIcon('avgProcessor')}`}
+                    {sortBy === 'avgNet' && `${useMax ? 'Max' : 'Avg'} Net ${getSortIcon('avgNet')}`}
+                    {sortBy === 'accuracy' && `${useMax ? 'Max' : 'Avg'} Accuracy % ${getSortIcon('accuracy')}`}
+                    {sortBy === 'endgameAverage' && `${useMax ? 'Max' : 'Avg'} Endgame ${getSortIcon('endgameAverage')}`}
+                    {sortBy === 'avgDriverQuality' && `${useMax ? 'Max' : 'Avg'} Driver ${getSortIcon('avgDriverQuality')}`}
+                    {sortBy === 'avgDefenseAbility' && `${useMax ? 'Max' : 'Avg'} Defense ${getSortIcon('avgDefenseAbility')}`}
+                    {sortBy === 'avgMechanicalReliability' && `${useMax ? 'Max' : 'Avg'} Reliability ${getSortIcon('avgMechanicalReliability')}`}
                   </th>
                 )}
                 {sortBy !== 'avgCycles' && (
                   <th onClick={() => handleSort('avgCycles')} className="sortable">
-                    Avg Cycles {getSortIcon('avgCycles')}
+                    {useMax ? 'Max' : 'Avg'} Cycles {getSortIcon('avgCycles')}
                   </th>
                 )}
                 {sortBy !== 'avgCoralCycles' && (
                   <th onClick={() => handleSort('avgCoralCycles')} className="sortable">
-                    Avg Coral Cycles {getSortIcon('avgCoralCycles')}
+                    {useMax ? 'Max' : 'Avg'} Coral Cycles {getSortIcon('avgCoralCycles')}
                   </th>
                 )}
                 {sortBy !== 'avgAlgaeCycles' && (
                   <th onClick={() => handleSort('avgAlgaeCycles')} className="sortable">
-                    Avg Algae Cycles {getSortIcon('avgAlgaeCycles')}
+                    {useMax ? 'Max' : 'Avg'} Algae Cycles {getSortIcon('avgAlgaeCycles')}
                   </th>
                 )}
                 {sortBy !== 'avgL4' && (
                   <th onClick={() => handleSort('avgL4')} className="sortable">
-                    Avg L4 {getSortIcon('avgL4')}
+                    {useMax ? 'Max' : 'Avg'} L4 {getSortIcon('avgL4')}
                   </th>
                 )}
                 {sortBy !== 'avgL3' && (
                   <th onClick={() => handleSort('avgL3')} className="sortable">
-                    Avg L3 {getSortIcon('avgL3')}
+                    {useMax ? 'Max' : 'Avg'} L3 {getSortIcon('avgL3')}
                   </th>
                 )}
                 {sortBy !== 'avgL2' && (
                   <th onClick={() => handleSort('avgL2')} className="sortable">
-                    Avg L2 {getSortIcon('avgL2')}
+                    {useMax ? 'Max' : 'Avg'} L2 {getSortIcon('avgL2')}
                   </th>
                 )}
                 {sortBy !== 'avgL1' && (
                   <th onClick={() => handleSort('avgL1')} className="sortable">
-                    Avg L1 {getSortIcon('avgL1')}
+                    {useMax ? 'Max' : 'Avg'} L1 {getSortIcon('avgL1')}
                   </th>
                 )}
                 {sortBy !== 'avgProcessor' && (
                   <th onClick={() => handleSort('avgProcessor')} className="sortable">
-                    Avg Processor {getSortIcon('avgProcessor')}
+                    {useMax ? 'Max' : 'Avg'} Processor {getSortIcon('avgProcessor')}
                   </th>
                 )}
                 {sortBy !== 'avgNet' && (
                   <th onClick={() => handleSort('avgNet')} className="sortable">
-                    Avg Net {getSortIcon('avgNet')}
+                    {useMax ? 'Max' : 'Avg'} Net {getSortIcon('avgNet')}
                   </th>
                 )}
                 {sortBy !== 'accuracy' && (
                   <th onClick={() => handleSort('accuracy')} className="sortable">
-                    Accuracy % {getSortIcon('accuracy')}
+                    {useMax ? 'Max' : 'Avg'} Accuracy % {getSortIcon('accuracy')}
                   </th>
                 )}
                 {sortBy !== 'endgameAverage' && (
                   <th onClick={() => handleSort('endgameAverage')} className="sortable">
-                    Endgame Average {getSortIcon('endgameAverage')}
+                    {useMax ? 'Max' : 'Avg'} Endgame {getSortIcon('endgameAverage')}
                   </th>
                 )}
                 {sortBy !== 'avgDriverQuality' && (
                   <th onClick={() => handleSort('avgDriverQuality')} className="sortable">
-                    Driver {getSortIcon('avgDriverQuality')}
+                    {useMax ? 'Max' : 'Avg'} Driver {getSortIcon('avgDriverQuality')}
                   </th>
                 )}
                 {sortBy !== 'avgDefenseAbility' && (
                   <th onClick={() => handleSort('avgDefenseAbility')} className="sortable">
-                    Defense {getSortIcon('avgDefenseAbility')}
+                    {useMax ? 'Max' : 'Avg'} Defense {getSortIcon('avgDefenseAbility')}
                   </th>
                 )}
                 {sortBy !== 'avgMechanicalReliability' && (
                   <th onClick={() => handleSort('avgMechanicalReliability')} className="sortable">
-                    Reliability {getSortIcon('avgMechanicalReliability')}
+                    {useMax ? 'Max' : 'Avg'} Reliability {getSortIcon('avgMechanicalReliability')}
                   </th>
                 )}
               </tr>

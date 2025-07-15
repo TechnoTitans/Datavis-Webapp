@@ -142,6 +142,13 @@ button:focus-visible {
   border-radius: 8px;
 }
 
+.checkbox-container {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  justify-content: center;
+}
+
 .toggle-container {
   display: flex;
   align-items: center;
@@ -668,6 +675,225 @@ button:focus-visible {
 .rankings-table .rank-cell,
 .rankings-table .team-cell {
   font-weight: bold;
+}
+
+/* Team Data page styles */
+.team-data-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.team-data-table-section {
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid #2563eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.team-header {
+  margin: 0 0 1rem 0;
+  color: #2563eb;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Team Data table styles with enhanced sticky positioning */
+.team-data-table-container {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid #4a4a4a;
+  margin-bottom: 2rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  isolation: isolate;
+}
+
+.team-data-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #2a2a2a;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+.team-data-table-container th {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #1d4ed8;
+  border-right: 1px solid #1d4ed8;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.team-data-table-container td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #4a4a4a;
+  border-right: 1px solid #4a4a4a;
+  color: #e0e0e0;
+  background-color: #2a2a2a;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-data-table-container tr:nth-child(even) td {
+  background-color: #2d2d2d;
+}
+
+.team-data-table-container tr:hover td {
+  background-color: #333;
+}
+
+/* Sticky column specific styles */
+.sticky-column {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 20 !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  width: 80px !important;
+  border-right: 2px solid #4a4a4a !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+  text-align: center !important;
+}
+
+.team-data-table-container th.sticky-column {
+  background-color: #2563eb !important;
+  border-right: 2px solid #1d4ed8 !important;
+  z-index: 30 !important;
+}
+
+.team-data-table-container td.sticky-column {
+  background-color: #2a2a2a !important;
+}
+
+.team-data-table-container tr:nth-child(even) td.sticky-column {
+  background-color: #2d2d2d !important;
+}
+
+.team-data-table-container tr:hover td.sticky-column {
+  background-color: #333 !important;
+}
+
+/* Checkbox styling within sticky column */
+.sticky-column input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+/* Second column (Scouting ID) specific styles */
+.second-column {
+  position: sticky !important;
+  left: 80px !important;
+  z-index: 15 !important;
+  min-width: 110px !important;
+  max-width: 110px !important;
+  width: 110px !important;
+  border-right: 2px solid #4a4a4a !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.team-data-table-container th.second-column {
+  background-color: #2563eb !important;
+  border-right: 2px solid #1d4ed8 !important;
+  z-index: 25 !important;
+}
+
+.team-data-table-container td.second-column {
+  background-color: #2a2a2a !important;
+  padding: 0.3rem !important;
+  font-size: 0.85rem !important;
+}
+
+.team-data-table-container td.second-column {
+  background-color: #2a2a2a !important;
+}
+
+.team-data-table-container tr:nth-child(even) td.second-column {
+  background-color: #2d2d2d !important;
+}
+
+.team-data-table-container tr:hover td.second-column {
+  background-color: #333 !important;
+}
+
+/* Team Analysis page styles */
+.team-analysis-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.team-analysis-controls {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.team-analysis-controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.team-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+  background-color: #3a3a3a;
+  color: #e0e0e0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.team-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.chart-container {
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid #2563eb;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.charts-container .chart-container {
+  margin: 0;
 }
 
 @media (max-width: 1200px) {
