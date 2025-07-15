@@ -1,136 +1,51 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../supabaseClient'
+import { useState } from 'react'
+import TeamSelector from '../components/TeamSelector'
+import Loading from '../components/Loading'
+import { useTeamData } from '../hooks/useTeamData'
+import { useSelectedTeams } from '../hooks/useLocalStorage'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function TeamAnalysis() {
-  const [allTeams, setAllTeams] = useState([])
-  const [chartData, setChartData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showTeamGrid, setShowTeamGrid] = useState(false)
-  const [selectedTeams, setSelectedTeams] = useState(() => {
-    try {
-      const stored = localStorage.getItem('selectedTeamsAnalysis')
-      if (stored) {
-        return JSON.parse(stored)
+  // Use shared hooks
+  const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAnalysis', [])
+  const { allTeams, matchRows, loading } = useTeamData(selectedTeams)
+
+  // Process match data for charts
+  const chartData = {}
+  if (matchRows) {
+    matchRows.forEach((match, index) => {
+      const scoutingIdParts = match["Scouting ID"]?.split('_') || []
+      const teamNum = scoutingIdParts[1] || 'Unknown'
+      const matchNum = scoutingIdParts[2] || (index + 1)
+      
+      if (!chartData[teamNum]) {
+        chartData[teamNum] = []
       }
-    } catch (e) {}
-    return []
-  })
-
-  useEffect(() => {
-    fetchTeams()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTeams && selectedTeams.length > 0) {
-      localStorage.setItem('selectedTeamsAnalysis', JSON.stringify(selectedTeams))
-      fetchTeamAnalysisData()
-    } else {
-      setChartData([])
-      setLoading(false)
-    }
-  }, [selectedTeams])
-
-  const fetchTeams = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('match_data')
-        .select('"Scouting ID"')
-        .eq('Use Data', true)
-
-      if (error) throw error
-
-      const teamNumbers = data
-        .map(row => {
-          const scoutingId = row["Scouting ID"]
-          if (typeof scoutingId === "string") {
-            const parts = scoutingId.split('_')
-            if (parts.length >= 2) {
-              return parts[1]
-            }
-          }
-          return null
-        })
-        .filter(teamNum => teamNum !== null)
-        .map(teamNum => parseInt(teamNum))
-        .filter(teamNum => !isNaN(teamNum))
-
-      const uniqueTeams = [...new Set(teamNumbers)].sort((a, b) => a - b)
-      setAllTeams(uniqueTeams)
-    } catch (error) {
-      console.error('Error fetching teams:', error)
-    }
-  }
-
-  const fetchTeamAnalysisData = async () => {
-    if (!selectedTeams || selectedTeams.length === 0) {
-      setChartData([])
-      return
-    }
-
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('match_data')
-        .select('*')
-        .eq('Use Data', true)
-
-      if (error) throw error
-
-      // Filter data for selected teams
-      const teamData = data.filter(row => {
-        const scoutingId = row["Scouting ID"]
-        if (typeof scoutingId === "string") {
-          const parts = scoutingId.split('_')
-          return parts.length >= 2 && selectedTeams.includes(parts[1])
-        }
-        return false
-      })
-
-      // Process data for chart - organize by team
-      const teamDataMap = {}
       
-      teamData.forEach((match, index) => {
-        const scoutingIdParts = match["Scouting ID"]?.split('_') || []
-        const teamNum = scoutingIdParts[1] || 'Unknown'
-        const matchNum = scoutingIdParts[2] || (index + 1)
-        
-        if (!teamDataMap[teamNum]) {
-          teamDataMap[teamNum] = []
-        }
-        
-        teamDataMap[teamNum].push({
-          match: `Match ${matchNum}`,
-          team: teamNum,
-          matchNumber: parseInt(matchNum) || (index + 1),
-          endgame: match['Endgame Position']?.toLowerCase() || 'none',
-          L4: match['L4 Count'] || 0,
-          L3: match['L3 Count'] || 0,
-          L2: match['L2 Count'] || 0,
-          L1: match['L1 Count'] || 0,
-          Processor: match['Processor Count'] || 0,
-          Net: match['Net Count'] || 0,
-          'L4 Miss': match['L4 Missed Count'] || 0,
-          'L3 Miss': match['L3 Missed Count'] || 0,
-          'L2 Miss': match['L2 Missed Count'] || 0,
-          'L1 Miss': match['L1 Missed Count'] || 0,
-          'Processor Miss': match['Processor Missed Count'] || 0,
-          'Net Miss': match['Net Missed Count'] || 0
-        })
+      chartData[teamNum].push({
+        match: `Match ${matchNum}`,
+        team: teamNum,
+        matchNumber: parseInt(matchNum) || (index + 1),
+        endgame: match['Endgame Position']?.toLowerCase() || 'none',
+        L4: match['L4 Count'] || 0,
+        L3: match['L3 Count'] || 0,
+        L2: match['L2 Count'] || 0,
+        L1: match['L1 Count'] || 0,
+        Processor: match['Processor Count'] || 0,
+        Net: match['Net Count'] || 0,
+        'L4 Miss': match['L4 Missed Count'] || 0,
+        'L3 Miss': match['L3 Missed Count'] || 0,
+        'L2 Miss': match['L2 Missed Count'] || 0,
+        'L1 Miss': match['L1 Missed Count'] || 0,
+        'Processor Miss': match['Processor Missed Count'] || 0,
+        'Net Miss': match['Net Missed Count'] || 0
       })
+    })
 
-      // sort each team's matches by match number
-      Object.keys(teamDataMap).forEach(teamNum => {
-        teamDataMap[teamNum].sort((a, b) => a.matchNumber - b.matchNumber)
-      })
-      
-      setChartData(teamDataMap)
-    } catch (error) {
-      console.error('Error fetching team analysis data:', error)
-    } finally {
-      setLoading(false)
-    }
+    // Sort each team's matches by match number
+    Object.keys(chartData).forEach(teamNum => {
+      chartData[teamNum].sort((a, b) => a.matchNumber - b.matchNumber)
+    })
   }
 
   const getEndgameLabel = (endgame) => {
@@ -140,83 +55,18 @@ function TeamAnalysis() {
     return 'None'
   }
 
-  const handleTeamToggle = (teamNumber) => {
-    const teamStr = String(teamNumber)
-    setSelectedTeams(prev => {
-      if (prev.includes(teamStr)) {
-        return prev.filter(t => t !== teamStr)
-      } else {
-        return [...prev, teamStr]
-      }
-    })
-  }
-
-  const clearAllTeams = () => {
-    setSelectedTeams([])
-  }
-
-  const filteredTeams = allTeams.filter(team => 
-    String(team).toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   return (
     <div className="team-analysis-container">
       <h2>Team Analysis - Stacked Performance</h2>
       
-      <div className="compare-team-selection">
-        <div className={`team-selection-header ${!showTeamGrid ? 'team-selection-header-only' : ''}`}>
-          <h2>Select Teams to Analyze</h2>
-          <button 
-            onClick={() => setShowTeamGrid(!showTeamGrid)}
-            className="toggle-grid-btn"
-          >
-            {showTeamGrid ? '▲ Hide Teams' : '▼ Show Teams'} ({selectedTeams.length} selected)
-          </button>
-        </div>
+      <TeamSelector
+        allTeams={allTeams}
+        selectedTeams={selectedTeams}
+        onTeamToggle={setSelectedTeams}
+        title="Select Teams to Analyze"
+      />
 
-        {showTeamGrid && (
-          <>
-            <div className="team-selection-controls">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Search teams..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="team-search-input"
-                />
-              </div>
-              
-              <div className="selection-actions">
-                <button onClick={clearAllTeams} className="action-btn clear-all">
-                  Clear All
-                </button>
-                <span className="selected-count">
-                  {selectedTeams.length} teams selected
-                </span>
-              </div>
-            </div>
-
-            <div className="teams-grid">
-              {filteredTeams.length === 0 ? (
-                <p className="no-teams">No teams found</p>
-              ) : (
-                filteredTeams.map(team => (
-                  <label key={team} className={`team-checkbox ${selectedTeams.includes(String(team)) ? 'selected' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTeams.includes(String(team))}
-                      onChange={() => handleTeamToggle(team)}
-                    />
-                    <span className="team-number">Team {team}</span>
-                    <span className="checkmark">✓</span>
-                  </label>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      {loading && <Loading />}
 
       {Object.keys(chartData).length === 0 ? (
         <p>No selected teams.</p>
