@@ -28,17 +28,6 @@ function Compare() {
   const summary = useTeamSummary(matchRows, useMaxValues)
 
   // Event handlers
-  const handleTeamToggle = (teamNumber) => {
-    const teamStr = String(teamNumber)
-    setSelectedTeams(prev => {
-      if (prev.includes(teamStr)) {
-        return prev.filter(t => t !== teamStr)
-      } else {
-        return [...prev, teamStr]
-      }
-    })
-  }
-
   const handleTeamClick = (teamNumber) => {
     localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
     navigate('/team-analysis')
@@ -57,10 +46,6 @@ function Compare() {
     })
   }
 
-  const clearAllTeams = () => {
-    setSelectedTeams([])
-  }
-
   const filteredStats = FIELDS_TO_SHOW.filter(stat => 
     stat.toLowerCase().includes(statSearchTerm.toLowerCase())
   )
@@ -69,60 +54,12 @@ function Compare() {
     <div className="compare-container">
       <h1>Compare Data</h1>
 
-      <div className="compare-team-selection">
-        <div className={`team-selection-header ${!showTeamGrid ? 'team-selection-header-only' : ''}`}>
-          <h2>Select Teams to Compare</h2>
-          <button 
-            onClick={() => setShowTeamGrid(!showTeamGrid)}
-            className="toggle-grid-btn"
-          >
-            {showTeamGrid ? '▲ Hide Teams' : '▼ Show Teams'} ({selectedTeams.length} selected)
-          </button>
-        </div>
-
-        {showTeamGrid && (
-          <>
-            <div className="team-selection-controls">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Search teams..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="team-search-input"
-                />
-              </div>
-              
-              <div className="selection-actions">
-                <button onClick={clearAllTeams} className="action-btn clear-all">
-                  Clear All
-                </button>
-                <span className="selected-count">
-                  {selectedTeams.length} teams selected
-                </span>
-              </div>
-            </div>
-
-            <div className="teams-grid">
-              {filteredTeams.length === 0 ? (
-                <p className="no-teams">No teams found</p>
-              ) : (
-                filteredTeams.map(team => (
-                  <label key={team} className={`team-checkbox ${selectedTeams.includes(String(team)) ? 'selected' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTeams.includes(String(team))}
-                      onChange={() => handleTeamToggle(team)}
-                    />
-                    <span className="team-number">Team {team}</span>
-                    <span className="checkmark">✓</span>
-                  </label>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      <TeamSelector
+        allTeams={allTeams}
+        selectedTeams={selectedTeams}
+        onTeamToggle={setSelectedTeams}
+        title="Select Teams to Compare"
+      />
 
       <div className="compare-stat-selection">
         <div className={`stat-selection-header ${!showStatGrid ? 'stat-selection-header-only' : ''}`}>

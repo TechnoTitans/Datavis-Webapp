@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import BaseLineChart from './BaseLineChart'
 
 // Helper functions for chart data validation and domain calculation
@@ -64,3 +65,125 @@ export const MadeChart = ({ chartDataByTeam, selectedTeams }) => (
     noDataMessage="No Made data for this field."
   />
 )
+
+/**
+ * Main StatCharts component that handles data processing and renders all chart types
+ */
+const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
+  // Build chart data for the selected stat
+  const buildStatChartData = (data, field) => {
+    const scoringLevels = [
+      { made: 'L4 Count', missed: 'L4 Missed Count' },
+      { made: 'L3 Count', missed: 'L3 Missed Count' },
+      { made: 'L2 Count', missed: 'L2 Missed Count' },
+      { made: 'L1 Count', missed: 'L1 Missed Count' },
+      { made: 'Processor Count', missed: 'Processor Missed Count' },
+      { made: 'Net Count', missed: 'Net Missed Count' },
+    ]
+    
+    let madeCol = null, missedCol = null, multiCols = null
+    
+    if (field === 'Total Cycles') {
+      multiCols = scoringLevels
+    } else if (field === 'Coral Cycles') {
+      multiCols = scoringLevels.slice(0, 4) // L4, L3, L2, L1
+    } else if (field === 'Algae Cycles') {
+      multiCols = scoringLevels.slice(4) // Processor, Net
+    } else {
+      const found = scoringLevels.find(level => level.made === field)
+      if (found) {
+        madeCol = found.made
+        missedCol = found.missed
+      }
+    }
+
+    const grouped = {}
+    for (const row of data) {
+      const team = row.team ?? ''
+      if (!grouped[team]) grouped[team] = []
+      grouped[team].push(row)
+    }
+
+    const result = {}
+    for (const team in grouped) {
+      result[team] = grouped[team].map((row) => {
+        let made = 0, missed = 0, hasData = false
+
+        if (multiCols) {
+          for (const level of multiCols) {
+            const vMade = row[level.made]
+            const vMissed = row[level.missed]
+            if (typeof vMade === 'number' && !isNaN(vMade)) {
+              made += vMade
+              hasData = true
+            }
+            if (typeof vMissed === 'number' && !isNaN(vMissed)) {
+              missed += vMissed
+              hasData = true
+            }
+          }
+        } else if (madeCol && missedCol) {
+          const vMade = row[madeCol]
+          const vMissed = row[missedCol]
+          if (typeof vMade === 'number' && !isNaN(vMade)) {
+            made = vMade
+            hasData = true
+          }
+          if (typeof vMissed === 'number' && !isNaN(vMissed)) {
+            missed = vMissed
+            hasData = true
+          }
+        }
+
+        const attempts = made + missed
+        
+        const getMatchNum = scoutingId => {
+          if (typeof scoutingId === "string") {
+            const parts = scoutingId.split('_')
+            if (parts.length > 2 && !isNaN(Number(parts[2]))) {
+              return Number(parts[2])
+            }
+          }
+          return 0
+        }
+        
+        return {
+          match: getMatchNum(row["Scouting ID"]),
+          attempts: hasData ? attempts : null,
+          successRate: hasData && attempts > 0 ? (made / attempts) * 100 : null,
+          made: hasData ? made : null,
+          team,
+        }
+      })
+    }
+    return result
+  }
+
+  const chartDataByTeam = buildStatChartData(matchRows, selectedStat)
+  
+  const hasAny = selectedTeams.some(team =>
+    (chartDataByTeam[team] || []).some(row => 
+      row.attempts !== null || row.successRate !== null || row.made !== null
+    )
+  )
+  
+  if (!hasAny) {
+    return <p>No numeric data for field "{selectedStat}".</p>
+  }
+
+  return (
+    <>
+      <AttemptsChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+      <SuccessRateChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+      <MadeChart chartDataByTeam={chartDataByTeam} selectedTeams={selectedTeams} />
+    </>
+  )
+}
+
+StatCharts.propTypes = {
+  matchRows: PropTypes.array.isRequired,
+  selectedTeams: PropTypes.arrayOf(PropTypes.string).isRequired,
+  selectedStat: PropTypes.string.isRequired
+}
+
+export default StatCharts
