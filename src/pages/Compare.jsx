@@ -631,8 +631,8 @@ function Compare() {
   }
 
   const handleTeamClick = (teamNumber) => {
-    localStorage.setItem('selectedTeam', String(teamNumber))
-    navigate('/team-data')
+    localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
+    navigate('/team-analysis')
   }
 
   const handleCellClick = (team, field) => {

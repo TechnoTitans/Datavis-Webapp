@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
 function Rankings() {
@@ -9,6 +10,7 @@ function Rankings() {
   const [error, setError] = useState('')
   const [useAttempts, setUseAttempts] = useState(false)
   const [useMax, setUseMax] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchTeamStats()
@@ -219,6 +221,11 @@ function Rankings() {
     }
   }
 
+  const handleTeamClick = (teamNumber) => {
+    localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
+    navigate('/team-analysis')
+  }
+
   const sortedTeams = [...teamStats].sort((a, b) => {
     let aValue = a[sortBy]
     let bValue = b[sortBy]
@@ -392,7 +399,17 @@ function Rankings() {
                   <td className="rank-cell">
                     <strong>#{index + 1}</strong>
                   </td>
-                  <td className="team-cell">
+                  <td 
+                    className="team-cell" 
+                    onClick={() => handleTeamClick(team.teamNumber)}
+                    style={{
+                      cursor: 'pointer',
+                      color: '#4299e1',
+                      textDecoration: 'underline'
+                    }}
+                    onMouseOver={(e) => e.target.style.color = '#63b3ed'}
+                    onMouseOut={(e) => e.target.style.color = '#4299e1'}
+                  >
                     <strong>{team.teamNumber}</strong>
                   </td>
                   {sortBy !== 'teamNumber' && (

@@ -820,6 +820,8 @@ button:focus-visible {
   background-color: #2a2a2a !important;
   padding: 0.3rem !important;
   font-size: 0.85rem !important;
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 
 .team-data-table-container td.second-column {

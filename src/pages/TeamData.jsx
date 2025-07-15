@@ -16,7 +16,6 @@ function TeamData() {
       if (stored) {
         return JSON.parse(stored)
       }
-      // Fallback to single team selection for backward compatibility
       const singleTeam = localStorage.getItem('selectedTeam')
       if (singleTeam) {
         return [singleTeam]
@@ -296,10 +295,7 @@ function TeamData() {
                                   }
                                   const displayVal = String(val);
                                   return (
-                                    <td 
-                                      key={col} 
-                                      title={displayVal.length > 15 ? displayVal : undefined}
-                                    >
+                                    <td key={col}>
                                       {displayVal}
                                     </td>
                                   )
