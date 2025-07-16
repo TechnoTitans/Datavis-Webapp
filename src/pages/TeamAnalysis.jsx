@@ -8,7 +8,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 function TeamAnalysis() {
   // Use shared hooks
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAnalysis', [])
-  const { allTeams, matchRows, loading } = useTeamData(selectedTeams)
+  
+  // Ensure selectedTeams is always an array
+  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+  
+  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams)
 
   // Process match data for charts
   const chartData = {}
@@ -55,21 +59,42 @@ function TeamAnalysis() {
     return 'None'
   }
 
+  // Event handlers
+  const handleTeamToggle = (teamNumber) => {
+    const teamStr = String(teamNumber)
+    setSelectedTeams(prev => {
+      // Ensure prev is an array
+      const prevArray = Array.isArray(prev) ? prev : []
+      if (prevArray.includes(teamStr)) {
+        return prevArray.filter(t => t !== teamStr)
+      } else {
+        return [...prevArray, teamStr]
+      }
+    })
+  }
+
+  const clearAllTeams = () => {
+    setSelectedTeams([])
+  }
+
   return (
     <div className="team-analysis-container">
-      <h2>Team Analysis - Stacked Performance</h2>
+      <h1>Team Analysis</h1>
       
       <TeamSelector
-        allTeams={allTeams}
-        selectedTeams={selectedTeams}
-        onTeamToggle={setSelectedTeams}
+        allTeams={allTeams || []}
+        selectedTeams={safeSelectedTeams}
+        onTeamToggle={handleTeamToggle}
+        onClearAll={clearAllTeams}
         title="Select Teams to Analyze"
       />
 
       {loading && <Loading />}
 
-      {Object.keys(chartData).length === 0 ? (
-        <p>No selected teams.</p>
+      {safeSelectedTeams.length === 0 ? (
+        <p>Select teams to view analysis.</p>
+      ) : Object.keys(chartData).length === 0 ? (
+        <p>No team data found for selected teams.</p>
       ) : (
         <div className="charts-container">
           {Object.entries(chartData).map(([teamNum, teamMatches]) => (
@@ -96,7 +121,10 @@ function TeamAnalysis() {
                     height={80}
                     tick={{ fontSize: 12 }}
                   />
-                  <YAxis stroke="#e0e0e0" />
+                  <YAxis 
+                    stroke="#e0e0e0" 
+                    allowDecimals={false}
+                  />
                   <Tooltip 
                     contentStyle={{
                       backgroundColor: '#3a3a3a',

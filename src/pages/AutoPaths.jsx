@@ -133,7 +133,10 @@ function AutoPaths() {
                         height={80}
                         tick={{ fontSize: 12 }}
                       />
-                      <YAxis stroke="#e0e0e0" />
+                      <YAxis 
+                        stroke="#e0e0e0" 
+                        allowDecimals={false}
+                      />
                       <Tooltip 
                         contentStyle={{
                           backgroundColor: '#3a3a3a',
@@ -178,17 +181,10 @@ function AutoPaths() {
                                   {label}
                                 </p>
                                 <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontStyle: 'italic' }}>
-                                  Auto Path: {data.autoPath || 'No data'}
+                                  Path: {data.autoPath || 'No data'}
                                 </p>
                                 {data.opponentLeft && (
-                                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ff6b6b' }}>
-                                    ⚠️ Opponent Left
-                                  </p>
-                                )}
-                                {data.coralStations && data.coralStations.length > 0 && (
-                                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#4ecdc4' }}>
-                                    🪸 Coral Stations: {data.coralStations.join(', ')}
-                                  </p>
+                                  <p>Leave</p>
                                 )}
                                 {orderedStats.map(stat => {
                                   const value = data[stat.key];
@@ -373,59 +369,6 @@ function AutoPaths() {
                       />
                     </BarChart>
                   </ResponsiveContainer>
-                  
-                  {/* Auto path statistics summary */}
-                  <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#2a2a2a', borderRadius: '8px' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: '#e0e0e0' }}>Team {teamNum} Auto Path Statistics</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                      {(() => {
-                        // Calculate aggregated statistics for this team
-                        const allAutoPaths = teamMatches.map(match => match.autoPath).filter(path => path)
-                        const aggregatedData = allAutoPaths.reduce((acc, path) => {
-                          const parsed = parseAutoPath(path)
-                          acc.L1 += parsed.L1
-                          acc.L2 += parsed.L2
-                          acc.L3 += parsed.L3
-                          acc.L4 += parsed.L4
-                          acc.Processor += parsed.Processor
-                          acc.Net += parsed.Net
-                          acc.L1_missed += parsed.L1_missed
-                          acc.L2_missed += parsed.L2_missed
-                          acc.L3_missed += parsed.L3_missed
-                          acc.L4_missed += parsed.L4_missed
-                          acc.Processor_missed += parsed.Processor_missed
-                          acc.Net_missed += parsed.Net_missed
-                          if (parsed.opponentLeft) acc.opponentLeft++
-                          return acc
-                        }, { L1: 0, L2: 0, L3: 0, L4: 0, Processor: 0, Net: 0, L1_missed: 0, L2_missed: 0, L3_missed: 0, L4_missed: 0, Processor_missed: 0, Net_missed: 0, opponentLeft: 0 })
-                        
-                        const stats = getAutoStatistics(aggregatedData)
-                        const totalMatches = teamMatches.length
-                        
-                        return Object.entries(stats).map(([level, data]) => (
-                          <div key={level} style={{ backgroundColor: '#3a3a3a', padding: '0.5rem', borderRadius: '4px' }}>
-                            <strong style={{ color: '#e0e0e0' }}>{level}:</strong>
-                            <br />
-                            <span style={{ fontSize: '0.9em', color: '#b0b0b0' }}>
-                              {data.scored} scored, {data.missed} missed
-                              <br />
-                              Success Rate: {data.successRate}%
-                            </span>
-                          </div>
-                        ))
-                      })()}
-                      
-                      <div style={{ backgroundColor: '#3a3a3a', padding: '0.5rem', borderRadius: '4px' }}>
-                        <strong style={{ color: '#e0e0e0' }}>Other:</strong>
-                        <br />
-                        <span style={{ fontSize: '0.9em', color: '#b0b0b0' }}>
-                          Total Matches: {teamMatches.length}
-                          <br />
-                          Opponent Left: {teamMatches.filter(m => m.opponentLeft).length} times
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>
