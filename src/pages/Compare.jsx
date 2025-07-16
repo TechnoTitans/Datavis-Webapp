@@ -21,13 +21,33 @@ function Compare() {
   const [showStatGrid, setShowStatGrid] = useState(false)
   const [expandedCells, setExpandedCells] = useState(new Set())
 
+  // Ensure selectedTeams is always an array
+  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+
   // Use team data hook
-  const { allTeams, matchRows, loading } = useTeamData(selectedTeams, true) // useDataOnly = true
+  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams, true) // useDataOnly = true
 
   // Use team summary hook
   const summary = useTeamSummary(matchRows, useMaxValues)
 
   // Event handlers
+  const handleTeamToggle = (teamNumber) => {
+    const teamStr = String(teamNumber)
+    setSelectedTeams(prev => {
+      // Ensure prev is an array
+      const prevArray = Array.isArray(prev) ? prev : []
+      if (prevArray.includes(teamStr)) {
+        return prevArray.filter(t => t !== teamStr)
+      } else {
+        return [...prevArray, teamStr]
+      }
+    })
+  }
+
+  const clearAllTeams = () => {
+    setSelectedTeams([])
+  }
+
   const handleTeamClick = (teamNumber) => {
     localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
     navigate('/team-analysis')
@@ -55,9 +75,10 @@ function Compare() {
       <h1>Compare Data</h1>
 
       <TeamSelector
-        allTeams={allTeams}
-        selectedTeams={selectedTeams}
-        onTeamToggle={setSelectedTeams}
+        allTeams={allTeams || []}
+        selectedTeams={safeSelectedTeams}
+        onTeamToggle={handleTeamToggle}
+        onClearAll={clearAllTeams}
         title="Select Teams to Compare"
       />
 
@@ -124,7 +145,7 @@ function Compare() {
           return (
             <StatCharts 
               matchRows={matchRows}
-              selectedTeams={selectedTeams}
+              selectedTeams={safeSelectedTeams}
               selectedStat={selectedStat}
             />
           );
@@ -146,8 +167,8 @@ function Compare() {
         {Object.keys(summary).length === 0 ? (
           <p>No data to summarize.</p>
         ) : (
-          <div className="summary-container" data-count={selectedTeams.length}>
-            {selectedTeams.map(team => (
+          <div className="summary-container" data-count={safeSelectedTeams.length}>
+            {safeSelectedTeams.map(team => (
               summary[team] ? (
                 <div key={team} className="summary-table">
                   <h3 

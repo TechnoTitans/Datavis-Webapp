@@ -7,6 +7,9 @@ function Settings() {
   const [databaseEditingPerms, setDatabaseEditingPerms] = useState(() => {
     return localStorage.getItem('databaseEditingPerms') === 'true'
   })
+  const [useAutoData, setUseAutoData] = useState(() => {
+    return localStorage.getItem('useAutoData') === 'true'
+  })
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [pendingToggleValue, setPendingToggleValue] = useState(false)
@@ -50,6 +53,11 @@ function Settings() {
       setDatabaseEditingPerms(checked)
       localStorage.setItem('databaseEditingPerms', checked.toString())
     }
+  }
+
+  const handleAutoDataToggle = (checked) => {
+    setUseAutoData(checked)
+    localStorage.setItem('useAutoData', checked.toString())
   }
 
   const handlePasswordSubmit = () => {
@@ -122,6 +130,25 @@ function Settings() {
             Enable this to allow editing of database records. When disabled, data will be read-only.
             <br />
             <strong>⚠️ Password required to enable editing permissions.</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <div className="setting-item">
+          <label className="switch-label">
+            <span>Use Auto Data In Calculations</span>
+            <div className="switch">
+              <input
+                type="checkbox"
+                checked={useAutoData}
+                onChange={(e) => handleAutoDataToggle(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </div>
+          </label>
+          <p className="setting-description">
+            When enabled, includes auto data in averages and totals.
           </p>
         </div>
       </div>

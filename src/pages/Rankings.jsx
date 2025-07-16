@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import Toggle from '../components/Toggle'
 import { useTeamData } from '../hooks/useTeamData'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { supabase } from '../supabaseClient'
+import '../styles/tables.css'
 
 function Rankings() {
   const navigate = useNavigate()
@@ -14,16 +16,46 @@ function Rankings() {
   const [useAttempts, setUseAttempts] = useLocalStorage('rankingsUseAttempts', false)
   const [useMax, setUseMax] = useLocalStorage('rankingsUseMax', false)
   
-  // Use team data hook for all teams
-  const { matchRows, loading } = useTeamData([], true) // empty array means all teams
+  // Use team data hook for all teams - pass all available teams
+  const { allTeams, matchRows, loading } = useTeamData([], true) // empty array means all teams, but hook doesn't work that way
+  
+  // We need to modify this to get all match data
+  const [allMatchRows, setAllMatchRows] = useState([])
+  const [dataLoading, setDataLoading] = useState(false)
+
+  // Custom effect to fetch all match data since useTeamData doesn't work with empty array
+  useEffect(() => {
+    const fetchAllMatchData = async () => {
+      setDataLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('match_data')
+          .select('*')
+          .eq('Use Data', true)
+
+        if (error) {
+          console.error('Error fetching all match data:', error)
+          return
+        }
+
+        setAllMatchRows(data || [])
+      } catch (error) {
+        console.error('Error in fetchAllMatchData:', error)
+      } finally {
+        setDataLoading(false)
+      }
+    }
+
+    fetchAllMatchData()
+  }, [])
 
   // Calculate team statistics from match data
   const teamStats = useMemo(() => {
-    if (!matchRows || matchRows.length === 0) return []
+    if (!allMatchRows || allMatchRows.length === 0) return []
 
     const teamStatsMap = new Map()
 
-    matchRows.forEach(match => {
+    allMatchRows.forEach(match => {
       const teamNumber = match['Scouting ID']?.split('_')[1]
       if (!teamNumber) return
 
@@ -174,7 +206,7 @@ function Rankings() {
     })
 
     return statsArray
-  }, [matchRows, useAttempts, useMax])
+  }, [allMatchRows, useAttempts, useMax])
 
   const handleSort = (stat) => {
     if (sortBy === stat) {
@@ -215,7 +247,7 @@ function Rankings() {
     return 'transparent'
   }
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="rankings-container">
         <h2>Rankings</h2>
@@ -227,16 +259,16 @@ function Rankings() {
   return (
     <div className="rankings-container">
       <h2>Team Rankings</h2>
-      <div className="rankings-controls">
+      <div className="rankings-controls" style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1rem' }}>
         <Toggle
           label="Show All Attempts (Made + Missed)"
           checked={useAttempts}
-          onChange={setUseAttempts}
+          onChange={(e) => setUseAttempts(e.target.checked)}
         />
         <Toggle
           label="Show Max Values (instead of Average)"
           checked={useMax}
-          onChange={setUseMax}
+          onChange={(e) => setUseMax(e.target.checked)}
         />
       </div>
       {teamStats.length === 0 ? (
@@ -362,37 +394,37 @@ function Rankings() {
                   {sortBy !== 'teamNumber' && (
                     <td style={{ backgroundColor: '#4a5568', fontWeight: 'bold' }}>
                       <strong>
-                        {sortBy === 'avgCycles' && team.avgCycles}
-                        {sortBy === 'avgCoralCycles' && team.avgCoralCycles}
-                        {sortBy === 'avgAlgaeCycles' && team.avgAlgaeCycles}
-                        {sortBy === 'avgL4' && team.avgL4}
-                        {sortBy === 'avgL3' && team.avgL3}
-                        {sortBy === 'avgL2' && team.avgL2}
-                        {sortBy === 'avgL1' && team.avgL1}
-                        {sortBy === 'avgProcessor' && team.avgProcessor}
-                        {sortBy === 'avgNet' && team.avgNet}
-                        {sortBy === 'accuracy' && `${team.accuracy}%`}
-                        {sortBy === 'endgameAverage' && team.endgameAverage}
-                        {sortBy === 'avgDriverQuality' && team.avgDriverQuality}
-                        {sortBy === 'avgDefenseAbility' && team.avgDefenseAbility}
-                        {sortBy === 'avgMechanicalReliability' && team.avgMechanicalReliability}
+                        {sortBy === 'avgCycles' && team.avgCycles.toFixed(2)}
+                        {sortBy === 'avgCoralCycles' && team.avgCoralCycles.toFixed(2)}
+                        {sortBy === 'avgAlgaeCycles' && team.avgAlgaeCycles.toFixed(2)}
+                        {sortBy === 'avgL4' && team.avgL4.toFixed(2)}
+                        {sortBy === 'avgL3' && team.avgL3.toFixed(2)}
+                        {sortBy === 'avgL2' && team.avgL2.toFixed(2)}
+                        {sortBy === 'avgL1' && team.avgL1.toFixed(2)}
+                        {sortBy === 'avgProcessor' && team.avgProcessor.toFixed(2)}
+                        {sortBy === 'avgNet' && team.avgNet.toFixed(2)}
+                        {sortBy === 'accuracy' && `${team.accuracy.toFixed(2)}%`}
+                        {sortBy === 'endgameAverage' && team.endgameAverage.toFixed(2)}
+                        {sortBy === 'avgDriverQuality' && team.avgDriverQuality.toFixed(2)}
+                        {sortBy === 'avgDefenseAbility' && team.avgDefenseAbility.toFixed(2)}
+                        {sortBy === 'avgMechanicalReliability' && team.avgMechanicalReliability.toFixed(2)}
                       </strong>
                     </td>
                   )}
-                  {sortBy !== 'avgCycles' && <td><strong>{team.avgCycles}</strong></td>}
-                  {sortBy !== 'avgCoralCycles' && <td><strong>{team.avgCoralCycles}</strong></td>}
-                  {sortBy !== 'avgAlgaeCycles' && <td><strong>{team.avgAlgaeCycles}</strong></td>}
-                  {sortBy !== 'avgL4' && <td>{team.avgL4}</td>}
-                  {sortBy !== 'avgL3' && <td>{team.avgL3}</td>}
-                  {sortBy !== 'avgL2' && <td>{team.avgL2}</td>}
-                  {sortBy !== 'avgL1' && <td>{team.avgL1}</td>}
-                  {sortBy !== 'avgProcessor' && <td>{team.avgProcessor}</td>}
-                  {sortBy !== 'avgNet' && <td>{team.avgNet}</td>}
-                  {sortBy !== 'accuracy' && <td>{team.accuracy}%</td>}
-                  {sortBy !== 'endgameAverage' && <td>{team.endgameAverage}</td>}
-                  {sortBy !== 'avgDriverQuality' && <td>{team.avgDriverQuality}</td>}
-                  {sortBy !== 'avgDefenseAbility' && <td>{team.avgDefenseAbility}</td>}
-                  {sortBy !== 'avgMechanicalReliability' && <td>{team.avgMechanicalReliability}</td>}
+                  {sortBy !== 'avgCycles' && <td><strong>{team.avgCycles.toFixed(2)}</strong></td>}
+                  {sortBy !== 'avgCoralCycles' && <td><strong>{team.avgCoralCycles.toFixed(2)}</strong></td>}
+                  {sortBy !== 'avgAlgaeCycles' && <td><strong>{team.avgAlgaeCycles.toFixed(2)}</strong></td>}
+                  {sortBy !== 'avgL4' && <td>{team.avgL4.toFixed(2)}</td>}
+                  {sortBy !== 'avgL3' && <td>{team.avgL3.toFixed(2)}</td>}
+                  {sortBy !== 'avgL2' && <td>{team.avgL2.toFixed(2)}</td>}
+                  {sortBy !== 'avgL1' && <td>{team.avgL1.toFixed(2)}</td>}
+                  {sortBy !== 'avgProcessor' && <td>{team.avgProcessor.toFixed(2)}</td>}
+                  {sortBy !== 'avgNet' && <td>{team.avgNet.toFixed(2)}</td>}
+                  {sortBy !== 'accuracy' && <td>{team.accuracy.toFixed(2)}%</td>}
+                  {sortBy !== 'endgameAverage' && <td>{team.endgameAverage.toFixed(2)}</td>}
+                  {sortBy !== 'avgDriverQuality' && <td>{team.avgDriverQuality.toFixed(2)}</td>}
+                  {sortBy !== 'avgDefenseAbility' && <td>{team.avgDefenseAbility.toFixed(2)}</td>}
+                  {sortBy !== 'avgMechanicalReliability' && <td>{team.avgMechanicalReliability.toFixed(2)}</td>}
                 </tr>
               ))}
             </tbody>

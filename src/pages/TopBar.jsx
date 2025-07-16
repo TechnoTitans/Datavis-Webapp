@@ -13,6 +13,7 @@ function Layout({ children }) {
           <button onClick={() => navigate('/team-data')}>Team Data</button>
           <button onClick={() => navigate('/compare')}>Compare</button>
           <button onClick={() => navigate('/team-analysis')}>Team Analysis</button>
+          <button onClick={() => navigate('/auto-paths')}>Auto Paths</button>
           <button onClick={() => navigate('/match-strategy')}>Match Strategy</button>
           <button onClick={() => navigate('/rankings')}>Rankings</button>
           <button onClick={() => navigate('/picklist')}>Picklist</button>

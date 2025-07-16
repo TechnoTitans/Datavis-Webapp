@@ -10,6 +10,7 @@ import Rankings from './pages/Rankings'
 import Picklist from './pages/Picklist'
 import Upload from './pages/Upload'
 import TeamAnalysis from './pages/TeamAnalysis'
+import AutoPaths from './pages/AutoPaths'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/match-strategy" element={<MatchStrategy />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/picklist" element={<Picklist />} />
+          <Route path="/auto-paths" element={<AutoPaths />} />
           <Route path="/upload" element={<Upload />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

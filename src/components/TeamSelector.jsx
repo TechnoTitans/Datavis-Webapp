@@ -23,7 +23,11 @@ const TeamSelector = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [showTeamGrid, setShowTeamGrid] = useState(showByDefault)
 
-  const filteredTeams = allTeams.filter(team => 
+  // Ensure we have valid arrays
+  const safeAllTeams = Array.isArray(allTeams) ? allTeams : []
+  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+
+  const filteredTeams = safeAllTeams.filter(team => 
     String(team).toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -35,7 +39,7 @@ const TeamSelector = ({
           onClick={() => setShowTeamGrid(!showTeamGrid)}
           className="toggle-grid-btn"
         >
-          {showTeamGrid ? '▲ Hide Teams' : '▼ Show Teams'} ({selectedTeams.length} selected)
+          {showTeamGrid ? '▲ Hide Teams' : '▼ Show Teams'} ({safeSelectedTeams.length} selected)
         </button>
       </div>
 
@@ -57,7 +61,7 @@ const TeamSelector = ({
                 Clear All
               </button>
               <span className="selected-count">
-                {selectedTeams.length} teams selected
+                {safeSelectedTeams.length} teams selected
               </span>
             </div>
           </div>
@@ -67,10 +71,10 @@ const TeamSelector = ({
               <p className="no-teams">No teams found</p>
             ) : (
               filteredTeams.map(team => (
-                <label key={team} className={`team-checkbox ${selectedTeams.includes(String(team)) ? 'selected' : ''}`}>
+                <label key={team} className={`team-checkbox ${safeSelectedTeams.includes(String(team)) ? 'selected' : ''}`}>
                   <input
                     type="checkbox"
-                    checked={selectedTeams.includes(String(team))}
+                    checked={safeSelectedTeams.includes(String(team))}
                     onChange={() => onTeamToggle(team)}
                   />
                   <span className="team-number">Team {team}</span>
