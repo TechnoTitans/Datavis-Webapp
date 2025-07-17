@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TeamSelector from '../components/TeamSelector'
 import Loading from '../components/Loading'
+import FieldVisualization from '../components/FieldVisualization'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -10,6 +11,8 @@ import '../index.css'
 
 function AutoPaths() {
   const navigate = useNavigate()
+  const [viewMode, setViewMode] = useState('stats') // 'stats' or 'visualization'
+  const [currentPathIndex, setCurrentPathIndex] = useState({}) // Track current path index per team
 
   // State management with custom hooks
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAutoPaths', [])
@@ -54,13 +57,18 @@ function AutoPaths() {
         'Processor Miss': parsedAutoData.Processor_missed || 0,
         'Net Miss': parsedAutoData.Net_missed || 0,
         opponentLeft: parsedAutoData.opponentLeft,
-        coralStations: parsedAutoData.coralStations
+        coralStations: parsedAutoData.coralStations,
+        parsedData: parsedAutoData
       })
     })
 
     // Sort each team's matches by match number
     Object.keys(chartData).forEach(teamNum => {
       chartData[teamNum].sort((a, b) => a.matchNumber - b.matchNumber)
+      // Initialize current path index for this team
+      if (!(teamNum in currentPathIndex)) {
+        setCurrentPathIndex(prev => ({ ...prev, [teamNum]: 0 }))
+      }
     })
   }
 
@@ -80,11 +88,30 @@ function AutoPaths() {
 
   const clearAllTeams = () => {
     setSelectedTeams([])
+    setCurrentPathIndex({})
   }
 
   const handleTeamClick = (teamNumber) => {
     localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
     navigate('/team-analysis')
+  }
+
+  const handleNextPath = (teamNum) => {
+    setCurrentPathIndex(prev => {
+      const teamPaths = chartData[teamNum] || []
+      const currentIndex = prev[teamNum] || 0
+      const nextIndex = currentIndex + 1 < teamPaths.length ? currentIndex + 1 : 0
+      return { ...prev, [teamNum]: nextIndex }
+    })
+  }
+
+  const handlePrevPath = (teamNum) => {
+    setCurrentPathIndex(prev => {
+      const teamPaths = chartData[teamNum] || []
+      const currentIndex = prev[teamNum] || 0
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : teamPaths.length - 1
+      return { ...prev, [teamNum]: prevIndex }
+    })
   }
 
   return (
@@ -99,15 +126,53 @@ function AutoPaths() {
         title="Select Teams for Auto Path Analysis"
       />
 
+      {/* View Mode Toggle */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        gap: '1rem', 
+        margin: '1rem 0',
+        padding: '1rem',
+        backgroundColor: '#2a2a2a',
+        borderRadius: '8px',
+        border: '1px solid #4a4a4a'
+      }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e0e0e0' }}>
+          <input
+            type="radio"
+            name="viewMode"
+            value="stats"
+            checked={viewMode === 'stats'}
+            onChange={(e) => setViewMode(e.target.value)}
+          />
+          <span style={{ fontWeight: 'bold' }}>📊 Stats Mode</span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e0e0e0' }}>
+          <input
+            type="radio"
+            name="viewMode"
+            value="visualization"
+            checked={viewMode === 'visualization'}
+            onChange={(e) => setViewMode(e.target.value)}
+          />
+          <span style={{ fontWeight: 'bold' }}>🗺️ Visualization Mode</span>
+        </label>
+      </div>
+
       {loading ? (
         <Loading message="Loading team data..." />
       ) : (
         <div style={{ marginTop: '2rem' }}>
           {safeSelectedTeams.length === 0 ? (
-            <p>Select teams to view auto path analysis.</p>
+            <p style={{ textAlign: 'center', fontSize: '1.2rem', color: '#666' }}>
+              Select teams to view auto path {viewMode === 'stats' ? 'statistics' : 'visualizations'}.
+            </p>
           ) : Object.keys(chartData).length === 0 ? (
-            <p>No auto path data found for selected teams.</p>
-          ) : (
+            <p style={{ textAlign: 'center', fontSize: '1.2rem', color: '#666' }}>
+              No auto path data found for selected teams.
+            </p>
+          ) : viewMode === 'stats' ? (
+            // Stats Mode - Bar Charts
             <div className="charts-container">
               {Object.entries(chartData).map(([teamNum, teamMatches]) => (
                 <div key={teamNum} className="chart-container">
@@ -184,7 +249,9 @@ function AutoPaths() {
                                   Path: {data.autoPath || 'No data'}
                                 </p>
                                 {data.opponentLeft && (
-                                  <p>Leave</p>
+                                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffa500' }}>
+                                    ⚠️ Opponent Left
+                                  </p>
                                 )}
                                 {orderedStats.map(stat => {
                                   const value = data[stat.key];
@@ -371,6 +438,99 @@ function AutoPaths() {
                   </ResponsiveContainer>
                 </div>
               ))}
+            </div>
+          ) : (
+            // Visualization Mode - Field Visualizations
+            <div className="visualizations-container">
+              {Object.entries(chartData).map(([teamNum, teamPaths]) => {
+                const currentIndex = currentPathIndex[teamNum] || 0
+                const currentPath = teamPaths[currentIndex]
+                
+                if (!currentPath) return null
+
+                return (
+                  <div key={teamNum} style={{ 
+                    marginBottom: '3rem',
+                    padding: '1rem',
+                    border: '2px solid #4a4a4a',
+                    borderRadius: '12px',
+                    backgroundColor: '#2a2a2a'
+                  }}>
+                    {/* Team header with navigation */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                      padding: '1rem',
+                      backgroundColor: '#1a1a1a',
+                      borderRadius: '8px',
+                      border: '1px solid #4a4a4a'
+                    }}>
+                      <h2 
+                        style={{ 
+                          color: '#2563eb', 
+                          margin: 0,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                        onClick={() => handleTeamClick(teamNum)}
+                      >
+                        Team {teamNum}
+                      </h2>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button
+                          onClick={() => handlePrevPath(teamNum)}
+                          disabled={teamPaths.length <= 1}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: teamPaths.length <= 1 ? '#555' : '#4CAF50',
+                            color: '#e0e0e0',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: teamPaths.length <= 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          ← Previous
+                        </button>
+                        
+                        <span style={{ 
+                          fontWeight: 'bold',
+                          minWidth: '120px',
+                          textAlign: 'center',
+                          color: '#e0e0e0'
+                        }}>
+                          {currentPath.match} ({currentIndex + 1} of {teamPaths.length})
+                        </span>
+                        
+                        <button
+                          onClick={() => handleNextPath(teamNum)}
+                          disabled={teamPaths.length <= 1}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: teamPaths.length <= 1 ? '#555' : '#4CAF50',
+                            color: '#e0e0e0',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: teamPaths.length <= 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Field visualization */}
+                    <FieldVisualization
+                      autoPath={currentPath.autoPath}
+                      position={currentPath.position || 'B1'}
+                    />
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
