@@ -5,23 +5,43 @@ import Loading from '../components/Loading'
 import FieldVisualization from '../components/FieldVisualization'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { parseAutoPath, getAutoStatistics } from '../utils/autoPathParser'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { parseAutoPath } from '../utils/autoPathParser'
 import '../index.css'
+import MultiSelect from '../components/MultiSelect'
 
 function AutoPaths() {
   const navigate = useNavigate()
-  const [viewMode, setViewMode] = useState('stats') // 'stats' or 'visualization'
-  const [currentPathIndex, setCurrentPathIndex] = useState({}) // Track current path index per team
+  const [viewMode, setViewMode] = useState('stats')
+  const [currentPathIndex, setCurrentPathIndex] = useState({})
+  const [selectedBarKeys, setSelectedBarKeys] = useState([
+    "Processor", "Net", "L1", "L2", "L3", "L4",
+    "Processor Miss", "Net Miss", "L1 Miss", "L2 Miss", "L3 Miss", "L4 Miss"
+  ])
 
-  // State management with custom hooks
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAutoPaths', [])
-
-  // Ensure selectedTeams is always an array
   const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams, true)
 
-  // Use team data hook
-  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams, true) // useDataOnly = true
+  // Bar keys for selection and legend
+  const allBarKeys = [
+    "Processor", "Net", "L1", "L2", "L3", "L4",
+    "Processor Miss", "Net Miss", "L1 Miss", "L2 Miss", "L3 Miss", "L4 Miss"
+  ]
+  const barColors = {
+    "Processor": "#FF6B35",
+    "Net": "#00D2FF",
+    "L1": "#4CAF50",
+    "L2": "#FFC107",
+    "L3": "#FF9800",
+    "L4": "#E91E63",
+    "Processor Miss": "#FFD4C4",
+    "Net Miss": "#B3F4FF",
+    "L1 Miss": "#C8E6C9",
+    "L2 Miss": "#FFF3C4",
+    "L3 Miss": "#FFE0B2",
+    "L4 Miss": "#F8BBD9"
+  }
 
   // Process auto path data for charts
   const chartData = {}
@@ -30,15 +50,9 @@ function AutoPaths() {
       const scoutingIdParts = match["Scouting ID"]?.split('_') || []
       const teamNum = scoutingIdParts[1] || 'Unknown'
       const matchNum = scoutingIdParts[2] || (index + 1)
-      
-      if (!chartData[teamNum]) {
-        chartData[teamNum] = []
-      }
-      
-      // Parse auto path data
+      if (!chartData[teamNum]) chartData[teamNum] = []
       const autoPath = match['Auto Path'] || ''
       const parsedAutoData = parseAutoPath(autoPath)
-      
       chartData[teamNum].push({
         match: `Match ${matchNum}`,
         team: teamNum,
@@ -58,25 +72,21 @@ function AutoPaths() {
         'Net Miss': parsedAutoData.Net_missed || 0,
         opponentLeft: parsedAutoData.opponentLeft,
         coralStations: parsedAutoData.coralStations,
-        parsedData: parsedAutoData
+        parsedData: parsedAutoData,
+        position: parsedAutoData.position
       })
     })
-
-    // Sort each team's matches by match number
     Object.keys(chartData).forEach(teamNum => {
       chartData[teamNum].sort((a, b) => a.matchNumber - b.matchNumber)
-      // Initialize current path index for this team
       if (!(teamNum in currentPathIndex)) {
         setCurrentPathIndex(prev => ({ ...prev, [teamNum]: 0 }))
       }
     })
   }
 
-  // Event handlers
   const handleTeamToggle = (teamNumber) => {
     const teamStr = String(teamNumber)
     setSelectedTeams(prev => {
-      // Ensure prev is an array
       const prevArray = Array.isArray(prev) ? prev : []
       if (prevArray.includes(teamStr)) {
         return prevArray.filter(t => t !== teamStr)
@@ -159,6 +169,27 @@ function AutoPaths() {
         </label>
       </div>
 
+      {/* Bar selection UI and legend */}
+      {viewMode === 'stats' && (
+        <div style={{ margin: '1rem 0', textAlign: 'center' }}>
+          <MultiSelect
+            options={allBarKeys}
+            selected={selectedBarKeys}
+            onChange={setSelectedBarKeys}
+            label="Select Bars to Display"
+            style={{
+              display: 'inline-block',
+              background: '#222',
+              color: '#e0e0e0',
+              borderRadius: 4,
+              padding: 8,
+              minWidth: 220,
+              marginLeft: 10
+            }}
+          />
+        </div>
+      )}
+
       {loading ? (
         <Loading message="Loading team data..." />
       ) : (
@@ -172,12 +203,11 @@ function AutoPaths() {
               No auto path data found for selected teams.
             </p>
           ) : viewMode === 'stats' ? (
-            // Stats Mode - Bar Charts
             <div className="charts-container">
               {Object.entries(chartData).map(([teamNum, teamMatches]) => (
                 <div key={teamNum} className="chart-container">
                   <h3 style={{ color: '#2563eb', textAlign: 'center', marginBottom: '1rem' }}>
-                    Team {teamNum} - Auto Path Performance
+                    Team {teamNum}
                   </h3>
                   <ResponsiveContainer width="100%" height={500}>
                     <BarChart
@@ -216,23 +246,21 @@ function AutoPaths() {
                         content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
-                            
-                            // Custom order for tooltip display
+                            // Custom order: Net, Processor, L4, L3, L2, L1, Net Miss, Processor Miss, L4 Miss, L3 Miss, L2 Miss, L1 Miss
                             const orderedStats = [
-                              { key: 'Processor', color: '#FF6B35' },
-                              { key: 'Net', color: '#00D2FF' },
-                              { key: 'L1', color: '#4CAF50' },
-                              { key: 'L2', color: '#FFC107' },
-                              { key: 'L3', color: '#FF9800' },
-                              { key: 'L4', color: '#E91E63' },
-                              { key: 'Processor Miss', color: '#FFD4C4' },
-                              { key: 'Net Miss', color: '#B3F4FF' },
-                              { key: 'L1 Miss', color: '#C8E6C9' },
-                              { key: 'L2 Miss', color: '#FFF3C4' },
-                              { key: 'L3 Miss', color: '#FFE0B2' },
-                              { key: 'L4 Miss', color: '#F8BBD9' }
+                              { key: 'Net', color: barColors["Net"] },
+                              { key: 'Processor', color: barColors["Processor"] },
+                              { key: 'L4', color: barColors["L4"] },
+                              { key: 'L3', color: barColors["L3"] },
+                              { key: 'L2', color: barColors["L2"] },
+                              { key: 'L1', color: barColors["L1"] },
+                              { key: 'Net Miss', color: barColors["Net Miss"] },
+                              { key: 'Processor Miss', color: barColors["Processor Miss"] },
+                              { key: 'L4 Miss', color: barColors["L4 Miss"] },
+                              { key: 'L3 Miss', color: barColors["L3 Miss"] },
+                              { key: 'L2 Miss', color: barColors["L2 Miss"] },
+                              { key: 'L1 Miss', color: barColors["L1 Miss"] }
                             ];
-                            
                             return (
                               <div style={{
                                 backgroundColor: '#3a3a3a',
@@ -283,7 +311,24 @@ function AutoPaths() {
                       />
                       <Legend 
                         wrapperStyle={{ paddingTop: '20px' }}
+                        payload={[
+                          // Made group
+                          { value: 'Processor', type: 'rect', color: '#FF6B35', id: 'Processor' },
+                          { value: 'Net', type: 'rect', color: '#00D2FF', id: 'Net' },
+                          { value: 'L1', type: 'rect', color: '#4CAF50', id: 'L1' },
+                          { value: 'L2', type: 'rect', color: '#FFC107', id: 'L2' },
+                          { value: 'L3', type: 'rect', color: '#FF9800', id: 'L3' },
+                          { value: 'L4', type: 'rect', color: '#E91E63', id: 'L4' },
+                          // Missed group
+                          { value: 'Processor Miss', type: 'rect', color: '#FFD4C4', id: 'Processor Miss' },
+                          { value: 'Net Miss', type: 'rect', color: '#B3F4FF', id: 'Net Miss' },
+                          { value: 'L1 Miss', type: 'rect', color: '#C8E6C9', id: 'L1 Miss' },
+                          { value: 'L2 Miss', type: 'rect', color: '#FFF3C4', id: 'L2 Miss' },
+                          { value: 'L3 Miss', type: 'rect', color: '#FFE0B2', id: 'L3 Miss' },
+                          { value: 'L4 Miss', type: 'rect', color: '#F8BBD9', id: 'L4 Miss' }
+                        ]}
                         content={(props) => {
+                          const { payload } = props;
                           const madeItems = [
                             { value: 'Processor', color: '#FF6B35' },
                             { value: 'Net', color: '#00D2FF' },
@@ -370,159 +415,90 @@ function AutoPaths() {
                           );
                         }}
                       />
-                      
-                      {/* Stack order: bottom to top */}
-                      <Bar dataKey="Processor" stackId="scoring" fill="#FF6B35" name="Processor" />
-                      <Bar dataKey="Net" stackId="scoring" fill="#00D2FF" name="Net" />
-                      <Bar dataKey="L1" stackId="scoring" fill="#4CAF50" name="L1" />
-                      <Bar dataKey="L2" stackId="scoring" fill="#FFC107" name="L2" />
-                      <Bar dataKey="L3" stackId="scoring" fill="#FF9800" name="L3" />
-                      <Bar dataKey="L4" stackId="scoring" fill="#E91E63" name="L4" />
-                      
-                      {/* Missed counterparts - dotted borders */}
-                      <Bar 
-                        dataKey="Processor Miss" 
-                        stackId="scoring" 
-                        fill="#FFD4C4" 
-                        name="Processor Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
-                      <Bar 
-                        dataKey="Net Miss" 
-                        stackId="scoring" 
-                        fill="#B3F4FF" 
-                        name="Net Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
-                      <Bar 
-                        dataKey="L1 Miss" 
-                        stackId="scoring" 
-                        fill="#C8E6C9" 
-                        name="L1 Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
-                      <Bar 
-                        dataKey="L2 Miss" 
-                        stackId="scoring" 
-                        fill="#FFF3C4" 
-                        name="L2 Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
-                      <Bar 
-                        dataKey="L3 Miss" 
-                        stackId="scoring" 
-                        fill="#FFE0B2" 
-                        name="L3 Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
-                      <Bar 
-                        dataKey="L4 Miss" 
-                        stackId="scoring" 
-                        fill="#F8BBD9" 
-                        name="L4 Miss"
-                        stroke="#000000"
-                        strokeWidth={2}
-                        strokeDasharray="6 6"
-                      />
+                      {selectedBarKeys.map(key => (
+                        <Bar
+                          key={key}
+                          dataKey={key}
+                          stackId="scoring"
+                          fill={barColors[key] || "#888"}
+                          stroke={key.includes("Miss") ? "#000" : undefined}
+                          strokeWidth={key.includes("Miss") ? 2 : undefined}
+                          strokeDasharray={key.includes("Miss") ? "6 6" : undefined}
+                          name={key}
+                        />
+                      ))}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ))}
             </div>
           ) : (
-            // Visualization Mode - Field Visualizations
-            <div className="visualizations-container">
-              {Object.entries(chartData).map(([teamNum, teamPaths]) => {
+            <div className="visualization-container">
+              {Object.entries(chartData).map(([teamNum, teamMatches]) => {
                 const currentIndex = currentPathIndex[teamNum] || 0
-                const currentPath = teamPaths[currentIndex]
-                
-                if (!currentPath) return null
-
+                const currentPath = teamMatches[currentIndex] || {}
                 return (
-                  <div key={teamNum} style={{ 
-                    marginBottom: '3rem',
+                  <div key={teamNum} className="visualization-card" style={{
+                    backgroundColor: '#222',
+                    borderRadius: '8px',
                     padding: '1rem',
-                    border: '2px solid #4a4a4a',
-                    borderRadius: '12px',
-                    backgroundColor: '#2a2a2a'
+                    marginBottom: '1.5rem',
+                    border: '1px solid #4a4a4a',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
                   }}>
-                    {/* Team header with navigation */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      marginBottom: '1rem',
-                      padding: '1rem',
-                      backgroundColor: '#1a1a1a',
-                      borderRadius: '8px',
-                      border: '1px solid #4a4a4a'
-                    }}>
-                      <h2 
-                        style={{ 
-                          color: '#2563eb', 
-                          margin: 0,
-                          cursor: 'pointer',
-                          textDecoration: 'underline'
+                    <h2 
+                      style={{ 
+                        color: '#2563eb', 
+                        margin: 0,
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                      onClick={() => handleTeamClick(teamNum)}
+                    >
+                      Team {teamNum}
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <button
+                        onClick={() => handlePrevPath(teamNum)}
+                        disabled={teamMatches.length <= 1}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: teamMatches.length <= 1 ? '#555' : '#4CAF50',
+                          color: '#e0e0e0',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: teamMatches.length <= 1 ? 'not-allowed' : 'pointer',
+                          fontSize: '14px'
                         }}
-                        onClick={() => handleTeamClick(teamNum)}
                       >
-                        Team {teamNum}
-                      </h2>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button
-                          onClick={() => handlePrevPath(teamNum)}
-                          disabled={teamPaths.length <= 1}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            backgroundColor: teamPaths.length <= 1 ? '#555' : '#4CAF50',
-                            color: '#e0e0e0',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: teamPaths.length <= 1 ? 'not-allowed' : 'pointer',
-                            fontSize: '14px'
-                          }}
-                        >
-                          ← Previous
-                        </button>
-                        
-                        <span style={{ 
-                          fontWeight: 'bold',
-                          minWidth: '120px',
-                          textAlign: 'center',
-                          color: '#e0e0e0'
-                        }}>
-                          {currentPath.match} ({currentIndex + 1} of {teamPaths.length})
-                        </span>
-                        
-                        <button
-                          onClick={() => handleNextPath(teamNum)}
-                          disabled={teamPaths.length <= 1}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            backgroundColor: teamPaths.length <= 1 ? '#555' : '#4CAF50',
-                            color: '#e0e0e0',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: teamPaths.length <= 1 ? 'not-allowed' : 'pointer',
-                            fontSize: '14px'
-                          }}
-                        >
-                          Next →
-                        </button>
-                      </div>
+                        ← Previous
+                      </button>
+                      <span style={{ 
+                        fontWeight: 'bold',
+                        minWidth: '120px',
+                        textAlign: 'center',
+                        color: '#e0e0e0'
+                      }}>
+                        {currentPath.match} ({currentIndex + 1} of {teamMatches.length})
+                      </span>
+                      <button
+                        onClick={() => handleNextPath(teamNum)}
+                        disabled={teamMatches.length <= 1}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: teamMatches.length <= 1 ? '#555' : '#4CAF50',
+                          color: '#e0e0e0',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: teamMatches.length <= 1 ? 'not-allowed' : 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Next →
+                      </button>
                     </div>
-
                     {/* Field visualization */}
                     <FieldVisualization
                       autoPath={currentPath.autoPath}

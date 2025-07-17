@@ -3,6 +3,7 @@ import TeamSelector from '../components/TeamSelector'
 import Loading from '../components/Loading'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
+import MultiSelect from '../components/MultiSelect'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function TeamAnalysis() {
@@ -59,6 +60,29 @@ function TeamAnalysis() {
     return 'None'
   }
 
+  // Bar keys for selection and legend
+  const allBarKeys = [
+    "Processor", "Net", "L1", "L2", "L3", "L4",
+    "Processor Miss", "Net Miss", "L1 Miss", "L2 Miss", "L3 Miss", "L4 Miss"
+  ]
+  const barColors = {
+    "Processor": "#FF6B35",
+    "Net": "#00D2FF",
+    "L1": "#4CAF50",
+    "L2": "#FFC107",
+    "L3": "#FF9800",
+    "L4": "#E91E63",
+    "Processor Miss": "#FFD4C4",
+    "Net Miss": "#B3F4FF",
+    "L1 Miss": "#C8E6C9",
+    "L2 Miss": "#FFF3C4",
+    "L3 Miss": "#FFE0B2",
+    "L4 Miss": "#F8BBD9"
+  }
+
+  // Stat selection state
+  const [selectedBarKeys, setSelectedBarKeys] = useState(allBarKeys)
+
   // Event handlers
   const handleTeamToggle = (teamNumber) => {
     const teamStr = String(teamNumber)
@@ -88,6 +112,25 @@ function TeamAnalysis() {
         onClearAll={clearAllTeams}
         title="Select Teams to Analyze"
       />
+
+      {/* Stat selection UI */}
+      <div style={{ margin: '1rem 0', textAlign: 'center' }}>
+        <MultiSelect
+          options={allBarKeys}
+          selected={selectedBarKeys}
+          onChange={setSelectedBarKeys}
+          label="Select Bars to Display"
+          style={{
+            display: 'inline-block',
+            background: '#222',
+            color: '#e0e0e0',
+            borderRadius: 4,
+            padding: 8,
+            minWidth: 220,
+            marginLeft: 10
+          }}
+        />
+      </div>
 
       {loading && <Loading />}
 
@@ -151,23 +194,21 @@ function TeamAnalysis() {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         const endgame = getEndgameLabel(data.endgame);
-                        
-                        // Custom order for tooltip display
+                        // Custom order: Net, Processor, L4, L3, L2, L1, Net Miss, Processor Miss, L4 Miss, L3 Miss, L2 Miss, L1 Miss
                         const orderedStats = [
-                          { key: 'Processor', color: '#FF6B35' },
-                          { key: 'Net', color: '#00D2FF' },
-                          { key: 'L1', color: '#4CAF50' },
-                          { key: 'L2', color: '#FFC107' },
-                          { key: 'L3', color: '#FF9800' },
-                          { key: 'L4', color: '#E91E63' },
-                          { key: 'Processor Miss', color: '#FFD4C4' },
-                          { key: 'Net Miss', color: '#B3F4FF' },
-                          { key: 'L1 Miss', color: '#C8E6C9' },
-                          { key: 'L2 Miss', color: '#FFF3C4' },
-                          { key: 'L3 Miss', color: '#FFE0B2' },
-                          { key: 'L4 Miss', color: '#F8BBD9' }
+                          { key: 'Net', color: barColors["Net"] },
+                          { key: 'Processor', color: barColors["Processor"] },
+                          { key: 'L4', color: barColors["L4"] },
+                          { key: 'L3', color: barColors["L3"] },
+                          { key: 'L2', color: barColors["L2"] },
+                          { key: 'L1', color: barColors["L1"] },
+                          { key: 'Net Miss', color: barColors["Net Miss"] },
+                          { key: 'Processor Miss', color: barColors["Processor Miss"] },
+                          { key: 'L4 Miss', color: barColors["L4 Miss"] },
+                          { key: 'L3 Miss', color: barColors["L3 Miss"] },
+                          { key: 'L2 Miss', color: barColors["L2 Miss"] },
+                          { key: 'L1 Miss', color: barColors["L1 Miss"] }
                         ];
-                        
                         return (
                           <div style={{
                             backgroundColor: '#3a3a3a',
@@ -227,7 +268,6 @@ function TeamAnalysis() {
                       { value: 'L4 Miss', type: 'rect', color: '#F8BBD9', id: 'L4 Miss' }
                     ]}
                     content={(props) => {
-                      const { payload } = props;
                       const madeItems = [
                         { value: 'Processor', color: '#FF6B35' },
                         { value: 'Net', color: '#00D2FF' },
@@ -244,7 +284,6 @@ function TeamAnalysis() {
                         { value: 'L3 Miss', color: '#FFE0B2' },
                         { value: 'L4 Miss', color: '#F8BBD9' }
                       ];
-                      
                       return (
                         <div style={{ 
                           margin: '20px 0 0 0',
@@ -315,70 +354,19 @@ function TeamAnalysis() {
                     }}
                   />
                   
-                  {/* Stack order: bottom to top as specified */}
-                  {/* Processor (bottom) */}
-                  <Bar dataKey="Processor" stackId="scoring" fill="#FF6B35" name="Processor" />
-                  <Bar dataKey="Net" stackId="scoring" fill="#00D2FF" name="Net" />
-                  <Bar dataKey="L1" stackId="scoring" fill="#4CAF50" name="L1" />
-                  <Bar dataKey="L2" stackId="scoring" fill="#FFC107" name="L2" />
-                  <Bar dataKey="L3" stackId="scoring" fill="#FF9800" name="L3" />
-                  <Bar dataKey="L4" stackId="scoring" fill="#E91E63" name="L4" />
-                  
-                  {/* Missed counterparts (top) - more desaturated versions with black dotted borders */}
-                  <Bar 
-                    dataKey="Processor Miss" 
-                    stackId="scoring" 
-                    fill="#FFD4C4" 
-                    name="Processor Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  <Bar 
-                    dataKey="Net Miss" 
-                    stackId="scoring" 
-                    fill="#B3F4FF" 
-                    name="Net Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  <Bar 
-                    dataKey="L1 Miss" 
-                    stackId="scoring" 
-                    fill="#C8E6C9" 
-                    name="L1 Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  <Bar 
-                    dataKey="L2 Miss" 
-                    stackId="scoring" 
-                    fill="#FFF3C4" 
-                    name="L2 Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  <Bar 
-                    dataKey="L3 Miss" 
-                    stackId="scoring" 
-                    fill="#FFE0B2" 
-                    name="L3 Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  <Bar 
-                    dataKey="L4 Miss" 
-                    stackId="scoring" 
-                    fill="#F8BBD9" 
-                    name="L4 Miss"
-                    stroke="#000000"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
+                  {/* Replace static <Bar> components with dynamic rendering based on selectedBarKeys */}
+                  {selectedBarKeys.map(key => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      stackId="scoring"
+                      fill={barColors[key] || "#888"}
+                      stroke={key.includes("Miss") ? "#000" : undefined}
+                      strokeWidth={key.includes("Miss") ? 2 : undefined}
+                      strokeDasharray={key.includes("Miss") ? "6 6" : undefined}
+                      name={key}
+                    />
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>
