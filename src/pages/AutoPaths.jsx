@@ -250,7 +250,7 @@ function AutoPaths() {
                                 </p>
                                 {data.opponentLeft && (
                                   <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffa500' }}>
-                                    ⚠️ Opponent Left
+                                    Leave
                                   </p>
                                 )}
                                 {orderedStats.map(stat => {
