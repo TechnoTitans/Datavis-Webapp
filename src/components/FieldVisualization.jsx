@@ -117,16 +117,17 @@ const FieldVisualization = ({ autoPath, position }) => {
         }}>
           {/* Arrow marker definition */}
           <defs>
+            {/* Remove gradients, just use solid color for arrows */}
             <marker
               id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
+              markerWidth="6"
+              markerHeight="4"
+              refX="5"
+              refY="2"
               orient="auto"
             >
               <polygon
-                points="0 0, 10 3.5, 0 7"
+                points="0 0, 6 2, 0 4"
                 fill={allianceColor}
               />
             </marker>
@@ -161,32 +162,85 @@ const FieldVisualization = ({ autoPath, position }) => {
             if (index === 0) return null // Skip first position (no arrow to draw)
             
             const prevPosition = positionOrders[index - 1]
-            const totalArrows = positionOrders.length - 1 // Total number of arrows
             
-            // Color interpolation from green (early) to red (later)
-            let arrowColor
-            if (totalArrows === 1) {
-              arrowColor = '#00ff00' // Single arrow is green
-            } else {
-              const progress = (index - 1) / (totalArrows - 1) // 0 to 1
-              const red = Math.round(255 * progress)
-              const green = Math.round(255 * (1 - progress))
-              arrowColor = `rgb(${red}, ${green}, 0)`
+            // Check if this path has been used before
+            const pathKey = `${prevPosition.x},${prevPosition.y}-${position.x},${position.y}`
+            const reversePathKey = `${position.x},${position.y}-${prevPosition.x},${prevPosition.y}`
+            
+            let pathsUsed = 0
+            for (let j = 1; j < index; j++) {
+              const checkPrev = positionOrders[j - 1]
+              const checkCurrent = positionOrders[j]
+              const checkPath = `${checkPrev.x},${checkPrev.y}-${checkCurrent.x},${checkCurrent.y}`
+              const checkReverse = `${checkCurrent.x},${checkCurrent.y}-${checkPrev.x},${checkPrev.y}`
+              
+              if (checkPath === pathKey || checkReverse === pathKey || 
+                  checkPath === reversePathKey || checkReverse === reversePathKey) {
+                pathsUsed++
+              }
             }
             
-            return (
-              <line
-                key={`arrow-${index}`}
-                x1={prevPosition.x}
-                y1={prevPosition.y}
-                x2={position.x}
-                y2={position.y}
-                stroke={arrowColor}
-                strokeWidth="15"
-                markerEnd="url(#arrowhead)"
-                opacity="0.9"
-              />
-            )
+            // Calculate color for this segment (continuous green to red)
+            const totalArrows = positionOrders.length - 1
+            let progress
+            if (totalArrows === 1) {
+              progress = 0
+            } else {
+              progress = index / totalArrows
+            }
+            const red = Math.round(255 * progress)
+            const green = Math.round(255 * (1 - progress))
+            const color = `rgb(${red},${green},0)`
+
+            if (pathsUsed === 0) {
+              // Straight line for first use
+              return (
+                <line
+                  key={`arrow-${index}`}
+                  x1={prevPosition.x}
+                  y1={prevPosition.y}
+                  x2={position.x}
+                  y2={position.y}
+                  stroke={color}
+                  strokeWidth="15"
+                  markerEnd="url(#arrowhead)"
+                  opacity="0.9"
+                />
+              )
+            } else {
+              // Curved path for repeated use
+              const midX = (prevPosition.x + position.x) / 2
+              const midY = (prevPosition.y + position.y) / 2
+              
+              // Calculate perpendicular offset
+              const dx = position.x - prevPosition.x
+              const dy = position.y - prevPosition.y
+              const length = Math.sqrt(dx * dx + dy * dy)
+              
+              // Normalize and create perpendicular vector
+              const perpX = -dy / length
+              const perpY = dx / length
+              
+              // Offset amount based on how many times this path has been used
+              const offset = (pathsUsed + 1) * 50
+              
+              const controlX = midX + perpX * offset
+              const controlY = midY + perpY * offset
+              
+              const pathData = `M ${prevPosition.x} ${prevPosition.y} Q ${controlX} ${controlY} ${position.x} ${position.y}`
+              
+              return (
+                <path
+                  key={`arrow-${index}`}
+                  d={pathData}
+                  stroke={color}
+                  strokeWidth="15"
+                  fill="none"
+                  markerEnd="url(#arrowhead)"
+                  opacity="0.9"
+                />
+              )
+            }
           })}
 
           {/* Start marker at net center */}
