@@ -92,6 +92,16 @@ const FieldVisualization = ({ autoPath, position }) => {
 
   const positionOrders = parsePathSequence(autoPath)
 
+  // Create gradients array for subgradient steps (do not use it yet)
+  const totalArrows = positionOrders.length - 1
+  const gradients = []
+  for (let i = 0; i < positionOrders.length; i++) {
+    const t = i / (positionOrders.length - 1)
+    const r = Math.round(255 * t)
+    const g = Math.round(255 * (1 - t))
+    gradients.push(`rgb(${r},${g},0)`)
+  }
+
   return (
     <div style={{ 
       padding: '20px', 
@@ -115,9 +125,8 @@ const FieldVisualization = ({ autoPath, position }) => {
           border: '1px solid #4a4a4a',
           borderRadius: '4px'
         }}>
-          {/* Arrow marker definition */}
           <defs>
-            {/* Remove gradients, just use solid color for arrows */}
+            {/* Arrow marker definition */}
             <marker
               id="arrowhead"
               markerWidth="6"
@@ -192,70 +201,72 @@ const FieldVisualization = ({ autoPath, position }) => {
             const green = Math.round(255 * (1 - progress))
             const color = `rgb(${red},${green},0)`
 
-            if (pathsUsed === 0) {
-              // Straight line for first use
-              return (
-                <line
-                  key={`arrow-${index}`}
+            // Always use a valid gradient index for arrows
+            // const gradientIndex = index - 1
+
+            return (
+              <>
+                <linearGradient
+                  id={`arrowGradient-${index}`}
                   x1={prevPosition.x}
                   y1={prevPosition.y}
                   x2={position.x}
                   y2={position.y}
-                  stroke={color}
-                  strokeWidth="15"
-                  markerEnd="url(#arrowhead)"
-                  opacity="0.9"
-                />
-              )
-            } else {
-              // Curved path for repeated use
-              const midX = (prevPosition.x + position.x) / 2
-              const midY = (prevPosition.y + position.y) / 2
-              
-              // Calculate perpendicular offset
-              const dx = position.x - prevPosition.x
-              const dy = position.y - prevPosition.y
-              const length = Math.sqrt(dx * dx + dy * dy)
-              
-              // Normalize and create perpendicular vector
-              const perpX = -dy / length
-              const perpY = dx / length
-              
-              // Offset amount based on how many times this path has been used
-              const offset = (pathsUsed + 1) * 50
-              
-              const controlX = midX + perpX * offset
-              const controlY = midY + perpY * offset
-              
-              const pathData = `M ${prevPosition.x} ${prevPosition.y} Q ${controlX} ${controlY} ${position.x} ${position.y}`
-              
-              return (
-                <path
-                  key={`arrow-${index}`}
-                  d={pathData}
-                  stroke={color}
-                  strokeWidth="15"
-                  fill="none"
-                  markerEnd="url(#arrowhead)"
-                  opacity="0.9"
-                />
-              )
-            }
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stopColor={gradients[index - 1]} />
+                  <stop offset="100%" stopColor={gradients[index]} />
+                </linearGradient>
+                {pathsUsed === 0 ? (
+                  <line
+                    key={`arrow-${index}`}
+                    x1={prevPosition.x}
+                    y1={prevPosition.y}
+                    x2={position.x}
+                    y2={position.y}
+                    stroke={`url(#arrowGradient-${index})`}
+                    strokeWidth="15"
+                    markerEnd="url(#arrowhead)"
+                    opacity="0.9"
+                  />
+                ) : (
+                  (() => {
+                    const midX = (prevPosition.x + position.x) / 2
+                    const midY = (prevPosition.y + position.y) / 2
+                    
+                    // Calculate perpendicular offset
+                    const dx = position.x - prevPosition.x
+                    const dy = position.y - prevPosition.y
+                    const length = Math.sqrt(dx * dx + dy * dy)
+                    
+                    // Normalize and create perpendicular vector
+                    const perpX = -dy / length
+                    const perpY = dx / length
+                    
+                    // Offset amount based on how many times this path has been used
+                    const offset = (pathsUsed + 1) * 50
+                    
+                    const controlX = midX + perpX * offset
+                    const controlY = midY + perpY * offset
+                    
+                    const pathData = `M ${prevPosition.x} ${prevPosition.y} Q ${controlX} ${controlY} ${position.x} ${position.y}`
+                    
+                    return (
+                      <path
+                        key={`arrow-${index}`}
+                        d={pathData}
+                        stroke={`url(#arrowGradient-${index})`}
+                        strokeWidth="15"
+                        fill="none"
+                        markerEnd="url(#arrowhead)"
+                        opacity="0.9"
+                      />
+                    )
+                  })()
+                )}
+              </>
+            )
           })}
-
-          {/* Start marker at net center */}
-          {positionOrders.length > 0 && (
-            <text
-              x={netCenter.x}
-              y={netCenter.y + 8}
-              textAnchor="middle"
-              fontSize="20"
-              fontWeight="bold"
-              fill="white"
-            >
-              START
-            </text>
-          )}
         </svg>
       </div>
       
