@@ -155,7 +155,7 @@ function AutoPaths() {
             checked={viewMode === 'stats'}
             onChange={(e) => setViewMode(e.target.value)}
           />
-          <span style={{ fontWeight: 'bold' }}>📊 Stats Mode</span>
+          <span style={{ fontWeight: 'bold' }}>Stats Mode</span>
         </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e0e0e0' }}>
           <input
@@ -165,7 +165,7 @@ function AutoPaths() {
             checked={viewMode === 'visualization'}
             onChange={(e) => setViewMode(e.target.value)}
           />
-          <span style={{ fontWeight: 'bold' }}>🗺️ Visualization Mode</span>
+          <span style={{ fontWeight: 'bold' }}>Visualization Mode</span>
         </label>
       </div>
 
@@ -459,7 +459,7 @@ function AutoPaths() {
                     >
                       Team {teamNum}
                     </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '7px', marginBottom: '25px'}}>
                       <button
                         onClick={() => handlePrevPath(teamNum)}
                         disabled={teamMatches.length <= 1}

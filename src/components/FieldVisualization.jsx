@@ -110,16 +110,6 @@ const FieldVisualization = ({ autoPath, position }) => {
       border: `2px solid #4a4a4a`,
       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
     }}>
-      <h3 style={{ 
-        textAlign: 'center', 
-        color: '#e0e0e0',
-        marginBottom: '1rem',
-        fontSize: '1.5rem',
-        fontWeight: 'bold'
-      }}>
-        Auto Path Visualization
-      </h3>
-      
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
         <svg width="800" height="500" viewBox="0 0 1733 1589" style={{ 
           border: '1px solid #4a4a4a',
