@@ -4,10 +4,9 @@ import PropTypes from 'prop-types'
  * Field visualization component for auto paths
  * @param {Object} props - Component props
  * @param {string} props.autoPath - Auto path string to visualize
- * @param {string} props.position - Position string from database
  * @returns {JSX.Element} - Field visualization component
  */
-const FieldVisualization = ({ autoPath, position }) => {
+const FieldVisualization = ({ autoPath }) => {
   const allianceColor = '#2563eb'
   const backgroundColor = '#1a1a1a'
 
@@ -273,8 +272,7 @@ const FieldVisualization = ({ autoPath, position }) => {
 }
 
 FieldVisualization.propTypes = {
-  autoPath: PropTypes.string.isRequired,
-  position: PropTypes.string.isRequired
+  autoPath: PropTypes.string.isRequired
 }
 
 export default FieldVisualization

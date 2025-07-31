@@ -502,7 +502,6 @@ function AutoPaths() {
                     {/* Field visualization */}
                     <FieldVisualization
                       autoPath={currentPath.autoPath}
-                      position={currentPath.position || 'B1'}
                     />
                   </div>
                 )

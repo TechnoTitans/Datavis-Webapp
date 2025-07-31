@@ -127,9 +127,7 @@ function Settings() {
             </div>
           </label>
           <p className="setting-description">
-            Enable this to allow editing of database records. When disabled, data will be read-only.
-            <br />
-            <strong>⚠️ Password required to enable editing permissions.</strong>
+            Enable this to allow editing of database records.
           </p>
         </div>
       </div>
@@ -148,7 +146,7 @@ function Settings() {
             </div>
           </label>
           <p className="setting-description">
-            When enabled, includes auto data in averages and totals.
+            When enabled, includes auto data in averages and totals. Not implemented yet. If you see this message, remind Jiayu to make it.
           </p>
         </div>
       </div>

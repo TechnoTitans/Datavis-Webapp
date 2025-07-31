@@ -16,9 +16,6 @@ function Rankings() {
   const [useAttempts, setUseAttempts] = useLocalStorage('rankingsUseAttempts', false)
   const [useMax, setUseMax] = useLocalStorage('rankingsUseMax', false)
   
-  // Use team data hook for all teams - pass all available teams
-  const { allTeams, matchRows, loading } = useTeamData([], true) // empty array means all teams, but hook doesn't work that way
-  
   // We need to modify this to get all match data
   const [allMatchRows, setAllMatchRows] = useState([])
   const [dataLoading, setDataLoading] = useState(false)
