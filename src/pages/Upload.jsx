@@ -195,7 +195,7 @@ function Upload() {
         'Is Ground Algae?': lines[20] === 'true',
         'Driver Quality': 0,
         'Defense Ability': 0,
-        'Mechanical Reliability': lines[21] === 'true',
+        'Mechanical Reliability': lines[21] === 'true' ? 0 : 5,
         'Algae Descorability': 0,
         'Notes': lines[22],
         'Use Data': true,
