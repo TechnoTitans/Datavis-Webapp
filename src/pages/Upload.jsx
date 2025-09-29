@@ -169,7 +169,7 @@ function Upload() {
     try {
       const lines = qrText.split('\n').filter(line => line.trim() !== '')
       
-      if (lines.length < 26 || lines[0] !== 'GACMP') {
+      if (lines.length < 22 || lines[0] !== 'GACMP') {
         throw new Error('Invalid QR code format')
       }
 
