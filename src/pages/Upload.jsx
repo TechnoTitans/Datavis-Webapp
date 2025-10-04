@@ -194,10 +194,10 @@ function Upload() {
         'Is Ground Coral?': lines[19] === 'true',
         'Is Ground Algae?': lines[20] === 'true',
         'Driver Quality': 0,
-        'Defense Ability': 0,
         'Mechanical Reliability': lines[21] === 'true' ? 0 : 5,
+        'Defense Ability': parseInt(lines[22]),
         'Algae Descorability': 0,
-        'Notes': lines[22],
+        'Notes': lines[23],
         'Use Data': true,
         _teamNumber: parseInt(lines[1]),
         _matchNumber: parseInt(lines[2])
