@@ -13,7 +13,7 @@
 - docs: Documentation files.
 - public: Public assets.
 - src: Source code files.
-
+- scripts: contains bash and node scripts for data extraction and import.
 
 # Project Description
 This project is a web application for extracting data from following systems and importing it into a Supabase database:

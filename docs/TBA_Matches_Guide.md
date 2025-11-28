@@ -15,9 +15,9 @@ curl -X GET "https://www.thebluealliance.com/api/v3/event/{event_key}/matches" \
 -H "accept: application/json"
 ```
 
-Example for 2025 Georgia AI event:
+Example for 2025 Georgia GRITS event:
 ```bash
-curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagai/matches" \
+curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagr/matches" \
 -H "X-TBA-Auth-Key: yX979sIiDrv6f5bBEg5bnPu2WHP7zrG0AwuyBUQ3f9jgL3s2qiMsKcnDIQIUOAo0" \
 -H "accept: application/json"
 ```
@@ -30,9 +30,9 @@ curl -X GET "https://www.thebluealliance.com/api/v3/team/{team_key}/event/{event
 -H "accept: application/json"
 ```
 
-Example for Team 1683 at 2025 Georgia AI event:
+Example for Team 1683 at 2025 Georgia GRITS event:
 ```bash
-curl -X GET "https://www.thebluealliance.com/api/v3/team/frc1683/event/2025gagai/matches" \
+curl -X GET "https://www.thebluealliance.com/api/v3/team/frc1683/event/2025gagr/matches" \
 -H "X-TBA-Auth-Key: yX979sIiDrv6f5bBEg5bnPu2WHP7zrG0AwuyBUQ3f9jgL3s2qiMsKcnDIQIUOAo0" \
 -H "accept: application/json"
 ```
@@ -45,9 +45,9 @@ curl -X GET "https://www.thebluealliance.com/api/v3/match/{match_key}" \
 -H "accept: application/json"
 ```
 
-Example for Qualification Match 1 at 2025 Georgia AI event:
+Example for Qualification Match 1 at 2025 Georgia GRITS event:
 ```bash
-curl -X GET "https://www.thebluealliance.com/api/v3/match/2025gagai_qm1" \
+curl -X GET "https://www.thebluealliance.com/api/v3/match/2025gagr_qm1" \
 -H "X-TBA-Auth-Key: yX979sIiDrv6f5bBEg5bnPu2WHP7zrG0AwuyBUQ3f9jgL3s2qiMsKcnDIQIUOAo0" \
 -H "accept: application/json"
 ```
@@ -67,7 +67,7 @@ Components:
   - `f`: Final
 - `match_number`: The match number (e.g., "1")
 
-Example: `2025gagai_qm1` = 2025 Georgia AI Event, Qualification Match 1
+Example: `2025gagr_qm1` = 2025 Georgia GRITS Event, Qualification Match 1
 
 ## Response Format
 
@@ -75,7 +75,7 @@ The API returns match data in JSON format. Here's what a typical match response 
 
 ```json
 {
-  "key": "2025gagai_qm1",
+  "key": "2025gagr_qm1",
   "comp_level": "qm",
   "match_number": 1,
   "alliances": {
@@ -93,7 +93,7 @@ The API returns match data in JSON format. Here's what a typical match response 
     }
   },
   "winning_alliance": "blue",
-  "event_key": "2025gagai",
+  "event_key": "2025gagr",
   "time": 1625097600,
   "actual_time": 1625097845,
   "predicted_time": 1625097600,
@@ -163,14 +163,14 @@ The API returns match data in JSON format. Here's what a typical match response 
 1. **Event Analysis:**
 ```bash
 # Get all matches from an event
-curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagai/matches" \
+curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagr/matches" \
 -H "X-TBA-Auth-Key: your_api_key"
 ```
 
 ### Get All Matches with Simple Event Filter
 ```bash
 # Get all matches from an event with simple formatting
-curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagai/matches/simple" \
+curl -X GET "https://www.thebluealliance.com/api/v3/event/2025gagr/matches/simple" \
 -H "X-TBA-Auth-Key: yX979sIiDrv6f5bBEg5bnPu2WHP7zrG0AwuyBUQ3f9jgL3s2qiMsKcnDIQIUOAo0" \
 -H "accept: application/json"
 ```
@@ -179,13 +179,13 @@ This endpoint returns a simplified version of match data, perfect for quick anal
 2. **Team Performance Tracking:**
 ```bash
 # Get team's matches at an event
-curl -X GET "https://www.thebluealliance.com/api/v3/team/frc1683/event/2025gagai/matches" \
+curl -X GET "https://www.thebluealliance.com/api/v3/team/frc1683/event/2025gagr/matches" \
 -H "X-TBA-Auth-Key: your_api_key"
 ```
 
 3. **Match Details:**
 ```bash
 # Get specific match details
-curl -X GET "https://www.thebluealliance.com/api/v3/match/2025gagai_qm1" \
+curl -X GET "https://www.thebluealliance.com/api/v3/match/2025gagr_qm1" \
 -H "X-TBA-Auth-Key: your_api_key"
 ```

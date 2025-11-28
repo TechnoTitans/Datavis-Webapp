@@ -50,9 +50,10 @@ GET /match/{match_key}
 
 #### Response Formats
 
-1. **Match Object:**
+1. **Match Object:** 
+
 ```json
-{
+// Matches are out of order - info is still accurate + accessible
   "key": "2023miket_qm123",
   "comp_level": "qm",  // qm = Qualification Match
   "match_number": 123,
@@ -86,6 +87,7 @@ GET /match/{match_key}
 
 2. **Team Object:**
 ```json
+// Matches are also out of order - info is still accurate + accessible
 {
   "key": "frc1234",
   "team_number": 1234,
