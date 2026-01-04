@@ -179,7 +179,7 @@ function TeamAnalysis() {
                     wrapperStyle={{
                       zIndex: 9999
                     }}
-                    formatter={(value, name, props) => {
+                    formatter={(value, name) => {
                       if (value === 0) return null; // Don't show zero values
                       return [value, name];
                     }}
@@ -267,7 +267,7 @@ function TeamAnalysis() {
                       { value: 'L3 Miss', type: 'rect', color: '#FFE0B2', id: 'L3 Miss' },
                       { value: 'L4 Miss', type: 'rect', color: '#F8BBD9', id: 'L4 Miss' }
                     ]}
-                    content={(props) => {
+                    content={() => {
                       const madeItems = [
                         { value: 'Processor', color: '#FF6B35' },
                         { value: 'Net', color: '#00D2FF' },

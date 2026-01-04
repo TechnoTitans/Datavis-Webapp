@@ -92,7 +92,6 @@ const FieldVisualization = ({ autoPath }) => {
   const positionOrders = parsePathSequence(autoPath)
 
   // Create gradients array for subgradient steps (do not use it yet)
-  const totalArrows = positionOrders.length - 1
   const gradients = []
   for (let i = 0; i < positionOrders.length; i++) {
     const t = i / (positionOrders.length - 1)
@@ -178,17 +177,7 @@ const FieldVisualization = ({ autoPath }) => {
               }
             }
             
-            // Calculate color for this segment (continuous green to red)
-            const totalArrows = positionOrders.length - 1
-            let progress
-            if (totalArrows === 1) {
-              progress = 0
-            } else {
-              progress = index / totalArrows
-            }
-            const red = Math.round(255 * progress)
-            const green = Math.round(255 * (1 - progress))
-            const color = `rgb(${red},${green},0)`
+            // Color is driven by the per-segment gradient.
 
             // Always use a valid gradient index for arrows
             // const gradientIndex = index - 1

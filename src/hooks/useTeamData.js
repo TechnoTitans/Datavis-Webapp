@@ -15,6 +15,10 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
 
   // Fetch all available teams
   const fetchAllTeams = async () => {
+    if (!supabase) {
+      setAllTeams([])
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('match_data')
@@ -38,6 +42,11 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
 
   // Fetch matches for selected teams
   const fetchMatches = async () => {
+    if (!supabase) {
+      setMatchRows([])
+      setLoading(false)
+      return
+    }
     if (!selectedTeams || selectedTeams.length === 0) {
       setMatchRows([])
       return
@@ -55,7 +64,7 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
 
       if (error) {
         console.error('Error fetching match data:', error)
-        alert('Failed to load match data.')
+        // Avoid blocking UI; pages can show their own warnings.
         return
       }
 

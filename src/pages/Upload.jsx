@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { supabase } from '../supabaseClient'
+import { supabase, supabaseConfigured } from '../supabaseClient'
 import { canEditDatabase } from '../utils/permissions'
 import QrScanner from 'qr-scanner'
+import { approveUnconfirmedData, insertUnconfirmedData, rejectUnconfirmedData } from '../utils/offlineMutations'
+import { toast } from 'sonner'
 
 function Upload() {
   const [isScanning, setIsScanning] = useState(false)
@@ -37,6 +39,10 @@ function Upload() {
   }, [])
 
   const fetchUnconfirmedData = async () => {
+    if (!supabaseConfigured || !supabase) {
+      setUnconfirmedData([])
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('unconfirmed_data')
@@ -77,7 +83,7 @@ function Upload() {
           stopScanning()
         },
         {
-          onDecodeError: error => {
+          onDecodeError: () => {
           },
           preferredCamera: 'environment',
           highlightScanRegion: true,
@@ -100,7 +106,7 @@ function Upload() {
               stopScanning()
             },
             {
-              onDecodeError: error => {
+              onDecodeError: () => {
               },
               preferredCamera: 'user',
               highlightScanRegion: true,
@@ -215,107 +221,95 @@ function Upload() {
   const uploadToUnconfirmed = async () => {
     if (!parsedData) {
       setMessage('No data to upload - please scan or parse QR code first')
+      toast.message('Nothing to upload', { description: 'Scan a QR code or paste data first.' })
       return
     }
 
     try {
       const { _teamNumber, _matchNumber, ...dataToInsert } = parsedData
-      
-      const { data, error } = await supabase
-        .from('unconfirmed_data')
-        .insert([dataToInsert])
-        .select()
 
-      if (error) {
-        throw error
+      const result = await insertUnconfirmedData(dataToInsert)
+      if (result?.error) throw result.error
+
+      setMessage(result.queued ? 'Saved offline! Will sync when online.' : 'Data uploaded successfully to unconfirmed_data!')
+      if (result.queued) {
+        toast.message('Saved offline', { description: 'Will sync when online.' })
+      } else {
+        toast.success('Uploaded', { description: 'Added to unconfirmed data.' })
       }
-      
-      setMessage('Data uploaded successfully to unconfirmed_data!')
       setParsedData(null)
       
       if (isAuthenticated) {
-        fetchUnconfirmedData()
+        if (result.queued) {
+          setUnconfirmedData(prev => [dataToInsert, ...(prev || [])])
+        } else {
+          fetchUnconfirmedData()
+        }
       }
     } catch (error) {
       console.error('Error uploading data:', error)
       setMessage('Error uploading data: ' + error.message)
+      toast.error('Upload failed', { description: error.message })
     }
   }
 
   const approveData = async (unconfirmedItem) => {
     try {
-      await supabase
-        .from('match_data')
-        .delete()
-        .eq('"Scouting ID"', unconfirmedItem['Scouting ID'])
+      const result = await approveUnconfirmedData(unconfirmedItem)
+      if (result?.error) throw result.error
 
-      const matchData = {
-        'Scouting ID': unconfirmedItem['Scouting ID'],
-        'Scouter Name': unconfirmedItem['Scouter Name'],
-        'Position': unconfirmedItem['Position'],
-        'Auto Path': unconfirmedItem['Auto Path'],
-        'L4 Count': unconfirmedItem['L4 Count'],
-        'L4 Missed Count': unconfirmedItem['L4 Missed Count'],
-        'L3 Count': unconfirmedItem['L3 Count'],
-        'L3 Missed Count': unconfirmedItem['L3 Missed Count'],
-        'L2 Count': unconfirmedItem['L2 Count'],
-        'L2 Missed Count': unconfirmedItem['L2 Missed Count'],
-        'L1 Count': unconfirmedItem['L1 Count'],
-        'L1 Missed Count': unconfirmedItem['L1 Missed Count'],
-        'Processor Count': unconfirmedItem['Processor Count'],
-        'Processor Missed Count': unconfirmedItem['Processor Missed Count'],
-        'Net Count': unconfirmedItem['Net Count'],
-        'Net Missed Count': unconfirmedItem['Net Missed Count'],
-        'Endgame Position': unconfirmedItem['Endgame Position'],
-        'Is Ground Coral?': unconfirmedItem['Is Ground Coral?'],
-        'Is Ground Algae?': unconfirmedItem['Is Ground Algae?'],
-        'Driver Quality': unconfirmedItem['Driver Quality'],
-        'Defense Ability': unconfirmedItem['Defense Ability'],
-        'Mechanical Reliability': unconfirmedItem['Mechanical Reliability'],
-        'Algae Descorability': unconfirmedItem['Algae Descorability'],
-        'Notes': unconfirmedItem['Notes'],
-        'Use Data': true
+      setMessage(
+        result.queued
+          ? `Approval queued for ${unconfirmedItem['Scouting ID']} (will sync when online)`
+          : `Approved data for ${unconfirmedItem['Scouting ID']}`,
+      )
+      if (result.queued) {
+        toast.message('Approval queued', { description: unconfirmedItem['Scouting ID'] })
+      } else {
+        toast.success('Approved', { description: unconfirmedItem['Scouting ID'] })
       }
 
-      const { error: insertError } = await supabase
-        .from('match_data')
-        .insert([matchData])
-
-      if (insertError) {
-        throw insertError
+      if (result.queued) {
+        setUnconfirmedData(prev =>
+          (prev || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID']),
+        )
+      } else {
+        fetchUnconfirmedData()
       }
-
-      const { error: deleteError } = await supabase
-        .from('unconfirmed_data')
-        .delete()
-        .eq('"Scouting ID"', unconfirmedItem['Scouting ID'])
-
-      if (deleteError) {
-        throw deleteError
-      }
-
-      setMessage(`Approved data for ${unconfirmedItem['Scouting ID']}`)
-      fetchUnconfirmedData()
     } catch (error) {
       console.error('Error approving data:', error)
       setMessage('Error approving data: ' + error.message)
+      toast.error('Approve failed', { description: error.message })
     }
   }
 
   const rejectData = async (unconfirmedItem) => {
     try {
-      const { error } = await supabase
-        .from('unconfirmed_data')
-        .delete()
-        .eq('"Scouting ID"', unconfirmedItem['Scouting ID'])
+      const result = await rejectUnconfirmedData(unconfirmedItem['Scouting ID'])
+      if (result?.error) throw result.error
 
-      if (error) throw error
-      
-      setMessage(`Rejected data for ${unconfirmedItem['Scouting ID']}`)
-      fetchUnconfirmedData()
+      setMessage(
+        result.queued
+          ? `Rejection queued for ${unconfirmedItem['Scouting ID']} (will sync when online)`
+          : `Rejected data for ${unconfirmedItem['Scouting ID']}`,
+      )
+      if (result.queued) {
+        toast.message('Rejection queued', { description: unconfirmedItem['Scouting ID'] })
+      } else {
+        toast.success('Rejected', { description: unconfirmedItem['Scouting ID'] })
+      }
+
+      if (result.queued) {
+        setUnconfirmedData(prev =>
+          (prev || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID']),
+        )
+      } else {
+        fetchUnconfirmedData()
+      }
     } catch (error) {
       console.error('Error rejecting data:', error)
       setMessage('Error rejecting data: ' + error.message)
+      toast.error('Reject failed', { description: error.message })
     }
   }
 

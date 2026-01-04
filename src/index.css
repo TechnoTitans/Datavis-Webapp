@@ -1,144 +1,70 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  :root {
+    --background: 222 54% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 54% 9%;
+    --card-foreground: 210 40% 98%;
+    --primary: 213 94% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 47% 14%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 28% 18%;
+    --input: 217 28% 18%;
+    --ring: 213 94% 58%;
+    --radius: 0.9rem;
+  }
+
+  body {
+    font-family: 'Space Grotesk', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(1200px 500px at 12% -12%, rgba(37, 99, 235, 0.18), transparent),
+      radial-gradient(900px 500px at 88% -20%, rgba(14, 116, 144, 0.14), transparent),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: auto, auto, 48px 48px, 48px 48px;
+    min-height: 100vh;
+    margin: 0;
+  }
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-/* Global Dark Theme Override */
-body {
-  background-color: #2a2a2a;
-  color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+@layer base {
+  h1 { @apply text-4xl font-semibold tracking-tight; }
+  h2 { @apply text-3xl font-semibold tracking-tight; }
+  h3 { @apply text-2xl font-semibold tracking-tight; }
 }
 
 #root {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
-  background-color: #2a2a2a;
   min-height: 100vh;
-  color: #e0e0e0;
-  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.no-scrollbar {
+  scrollbar-width: none;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* Global Layout */
-.card {
-  padding: 2em;
-  background-color: #3a3a3a;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid #4a4a4a;
-}
-
-.read-the-docs {
-  color: #b0b0b0;
-}
-
-/* Logo animations */
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-/* Layout containers */
-.layout-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.page-content {
-  background: linear-gradient(135deg, #3a3a3a, #424242);
-  border-radius: 16px;
-  padding: 2rem;
-  margin: 1rem auto;
-  width: 1200px;
-  max-width: calc(100% - 2rem);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border: 1px solid #4a4a4a;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Rankings controls */
 .rankings-controls {
   margin: 20px 0;
   padding: 15px;
-  background: rgba(37, 99, 235, 0.1);
-  border: 1px solid #2563eb;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1f2937;
   border-radius: 8px;
 }
 
@@ -160,7 +86,7 @@ button:focus-visible {
 .toggle-container input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #2563eb;
+  accent-color: #3b82f6;
   cursor: pointer;
 }
 
@@ -174,13 +100,14 @@ button:focus-visible {
 }
 
 .compare-team-selection {
-  margin: 2rem auto;
-  padding: 1.5rem 2rem;
-  background: rgba(37, 99, 235, 0.05);
-  border: 1px solid #2563eb;
-  border-radius: 12px;
+  margin: 1.5rem auto;
+  padding: 1.25rem 1.5rem;
+  background: rgba(10, 18, 34, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+  border-radius: 14px;
   min-height: 60px;
-  max-width: 1000px;
+  max-width: 960px;
   width: 100%;
 }
 
@@ -207,28 +134,29 @@ button:focus-visible {
 
 .team-selection-header h2 {
   margin: 0;
-  color: #2563eb;
-  font-size: 1.4rem;
+  color: #f1f5f9;
+  font-size: 1.55rem;
   text-align: center;
 }
 
 .toggle-grid-btn {
-  background-color: #2563eb;
-  color: white;
+  background-color: #0b1220;
+  color: #e5e7eb;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.55rem 1.1rem;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   position: absolute;
   right: 0;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
 }
 
 .toggle-grid-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #1f2937;
 }
 
 .team-selection-controls {
@@ -250,17 +178,17 @@ button:focus-visible {
 .team-search-input {
   width: 90%;
   padding: 0.75rem 1rem;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #1f2937;
   border-radius: 8px;
-  background-color: #3a3a3a;
-  color: #e0e0e0;
+  background-color: #0f172a;
+  color: #e5e7eb;
   font-size: 1rem;
 }
 
 .team-search-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .selection-actions {
@@ -281,12 +209,12 @@ button:focus-visible {
 }
 
 .action-btn.clear-all {
-  background-color: #dc2626;
+  background-color: #991b1b;
   color: white;
 }
 
 .action-btn.clear-all:hover {
-  background-color: #b91c1c;
+  background-color: #7f1d1d;
 }
 
 .selected-count {
@@ -302,31 +230,31 @@ button:focus-visible {
   max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #1f2937;
   border-radius: 8px;
-  background-color: #2a2a2a;
+  background-color: #0b1220;
 }
 
 .team-checkbox {
   display: flex;
   align-items: center;
   padding: 0.75rem;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #1f2937;
   border-radius: 6px;
-  background-color: #3a3a3a;
+  background-color: #0f172a;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
 }
 
 .team-checkbox:hover {
-  border-color: #2563eb;
-  background-color: rgba(37, 99, 235, 0.1);
+  border-color: #334155;
+  background-color: rgba(59, 130, 246, 0.08);
 }
 
 .team-checkbox.selected {
-  border-color: #2563eb;
-  background-color: rgba(37, 99, 235, 0.15);
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.15);
 }
 
 .team-checkbox input[type="checkbox"] {
@@ -335,13 +263,13 @@ button:focus-visible {
 
 .team-number {
   flex: 1;
-  color: #e0e0e0;
+  color: #e5e7eb;
   font-weight: 500;
   font-size: 0.9rem;
 }
 
 .checkmark {
-  color: #2563eb;
+  color: #60a5fa;
   font-weight: bold;
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -371,8 +299,8 @@ button:focus-visible {
 .compare-stat-selection {
   margin: 2rem auto;
   padding: 1.5rem 2rem;
-  background: rgba(37, 99, 235, 0.05);
-  border: 1px solid #2563eb;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1f2937;
   border-radius: 12px;
   min-height: 60px;
   max-width: 1000px;
@@ -402,7 +330,7 @@ button:focus-visible {
 
 .stat-selection-header h2 {
   margin: 0;
-  color: #2563eb;
+  color: #e5e7eb;
   font-size: 1.4rem;
   text-align: center;
 }
@@ -418,18 +346,18 @@ button:focus-visible {
 .stat-search-input {
   width: 600px;
   padding: 0.75rem 1rem;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #1f2937;
   border-radius: 8px;
-  background-color: #3a3a3a;
-  color: #e0e0e0;
+  background-color: #0f172a;
+  color: #e5e7eb;
   font-size: 1rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-search-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .stat-search-input::placeholder {
@@ -443,9 +371,9 @@ button:focus-visible {
   max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
-  border: 1px solid #4a4a4a;
+  border: 1px solid #1f2937;
   border-radius: 8px;
-  background-color: #2a2a2a;
+  background-color: #0b1220;
 }
 
 .stat-checkbox {

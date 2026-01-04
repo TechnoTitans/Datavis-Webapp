@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabaseClient'
+import { supabase, supabaseConfigured } from '../supabaseClient'
 import '../styles/settings.css'
 import '../styles/tables.css'
+import { updateMatchUseData } from '../utils/offlineMutations'
+import { toast } from 'sonner'
 
 function Settings() {
   const [databaseEditingPerms, setDatabaseEditingPerms] = useState(() => {
@@ -26,6 +28,11 @@ function Settings() {
   }, [])
 
   const fetchUnusedMatches = async () => {
+    if (!supabaseConfigured || !supabase) {
+      setUnusedMatches([])
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -66,9 +73,9 @@ function Settings() {
       localStorage.setItem('databaseEditingPerms', pendingToggleValue.toString())
       setShowPasswordModal(false)
       setPasswordInput('')
-      alert('Database editing permissions enabled!')
+      toast.success('Enabled', { description: 'Database editing permissions enabled.' })
     } else {
-      alert('Incorrect password!')
+      toast.error('Incorrect password', { description: 'Try again.' })
       setPasswordInput('')
     }
   }
@@ -81,19 +88,13 @@ function Settings() {
 
   const handleUseDataToggle = async (scoutingId, newValue) => {
     if (!databaseEditingPerms) {
-      alert('Database editing permissions required to modify matches!')
+      toast.message('Permission required', { description: 'Enable database editing in Settings first.' })
       return
     }
 
     try {
-      const { error } = await supabase
-        .from('match_data')
-        .update({ 'Use Data': newValue })
-        .eq('"Scouting ID"', scoutingId)
-
-      if (error) {
-        throw error
-      }
+      const result = await updateMatchUseData({ scoutingId, value: newValue })
+      if (result?.error) throw result.error
 
       // Update local state
       setUnusedMatches(prevMatches =>
@@ -102,10 +103,16 @@ function Settings() {
         ).filter(match => !match['Use Data']) // Remove from list if enabled
       )
       
-      alert(`Match ${newValue ? 'enabled' : 'disabled'} successfully!`)
+      if (result.queued) {
+        toast.message(newValue ? 'Match enabled (offline)' : 'Match disabled (offline)', {
+          description: 'Queued and will sync when online.',
+        })
+      } else {
+        toast.success(newValue ? 'Match enabled' : 'Match disabled', { description: 'Saved.' })
+      }
     } catch (error) {
       console.error('Error updating match:', error)
-      alert('Error updating match: ' + error.message)
+      toast.error('Update failed', { description: error.message })
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TeamSelector from '../components/TeamSelector'
 import Toggle from '../components/Toggle'
@@ -8,7 +8,6 @@ import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams, useLocalStorage } from '../hooks/useLocalStorage'
 import { useTeamSummary } from '../hooks/useTeamSummary'
 import { SCORING_LEVELS, CORAL_LEVELS, ALGAE_LEVELS, FIELDS_TO_SHOW } from '../constants/scoring'
-import { parseMatchNumber } from '../utils/helpers'
 
 function Compare() {
   const navigate = useNavigate()
@@ -25,7 +24,7 @@ function Compare() {
   const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
 
   // Use team data hook
-  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams, true) // useDataOnly = true
+  const { allTeams, matchRows } = useTeamData(safeSelectedTeams, true) // useDataOnly = true
 
   // Use team summary hook
   const summary = useTeamSummary(matchRows, useMaxValues)

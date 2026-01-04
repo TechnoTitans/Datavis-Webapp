@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
 import { executeWithPermission } from '../utils/permissions'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
 import TeamSelector from '../components/TeamSelector'
 import Loading from '../components/Loading'
-import { supabase } from '../supabaseClient'
+import { updateMatchUseData } from '../utils/offlineMutations'
+import { toast } from 'sonner'
 
 function TeamData() {
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsData', [])
@@ -25,34 +25,30 @@ function TeamData() {
     setSelectedTeams([])
   }
 
-  // get usedRows by filtering matchRows
-  const usedRows = useMemo(() => {
-    return matchRows.filter(row => row['Use Data'] === true)
-  }, [matchRows])
-
   const handleUseDataChange = async (scoutingId, checked) => {
     console.log('handleUseDataChange called:', { scoutingId, checked })
     try {
       await executeWithPermission(async () => {
-        console.log('Permission granted, updating database...')
-        const { error, data } = await supabase
-          .from('match_data')
-          .update({ 'Use Data': checked })
-          .eq('"Scouting ID"', scoutingId)
-          .select()
+        console.log('Permission granted, updating database (or queueing if offline)...')
+        const result = await updateMatchUseData({ scoutingId, value: checked })
+        if (result?.error) {
+          console.error('Error updating Use Data:', result.error)
+          toast.error('Could not update “Use Data”.')
+          return
+        }
 
-        console.log('Database update result:', { error, data })
-        
-        if (error) {
-          console.error('Error updating Use Data:', error)
-          alert('Failed to update Use Data field.')
+        setMatchRows(prevRows =>
+          prevRows.map(row =>
+            row["Scouting ID"] === scoutingId ? { ...row, 'Use Data': checked } : row
+          )
+        )
+
+        if (result.queued) {
+          console.log('Update queued for later sync')
+          toast.message('Saved offline', { description: 'Change queued and will sync when online.' })
         } else {
           console.log('Database updated successfully')
-          setMatchRows(prevRows =>
-            prevRows.map(row =>
-              row["Scouting ID"] === scoutingId ? { ...row, 'Use Data': checked } : row
-            )
-          )
+          toast.success('Saved', { description: '“Use Data” updated.' })
         }
       })
     } catch (error) {
@@ -67,7 +63,7 @@ function TeamData() {
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div>
       <h1>Team Data</h1>
 
       <TeamSelector

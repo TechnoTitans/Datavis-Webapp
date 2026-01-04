@@ -2,9 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import Toggle from '../components/Toggle'
-import { useTeamData } from '../hooks/useTeamData'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-import { supabase } from '../supabaseClient'
+import { supabase, supabaseConfigured } from '../supabaseClient'
 import '../styles/tables.css'
 
 function Rankings() {
@@ -25,6 +24,10 @@ function Rankings() {
     const fetchAllMatchData = async () => {
       setDataLoading(true)
       try {
+        if (!supabaseConfigured || !supabase) {
+          setAllMatchRows([])
+          return
+        }
         const { data, error } = await supabase
           .from('match_data')
           .select('*')
@@ -240,9 +243,7 @@ function Rankings() {
     return sortOrder === 'desc' ? '↓' : '↑'
   }
 
-  const getRankColor = (rank) => {
-    return 'transparent'
-  }
+  const getRankColor = () => 'transparent'
 
   if (dataLoading) {
     return (

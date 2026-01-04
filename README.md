@@ -26,7 +26,12 @@ yarn
 ```
 
 3. Set up environment variables
-Create a `.env` file in the root directory with the following variables:
+Copy `.env.example` to `.env` and fill in your Supabase credentials:
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with the following variables:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_KEY=your_supabase_anon_key
@@ -37,16 +42,20 @@ Replace `your_supabase_project_url` and `your_supabase_anon_key` with your actua
 
 To run the application in development mode:
 ```bash
+npm install
 npm run dev
 # or
 yarn dev
 ```
 The application will be available at http://localhost:5173
 
+If you just added Tailwind/shadcn dependencies, run `npm install` again after pulling changes.
+
 ### Building for Production
 
 To create a production build:
 ```bash
+npm install
 npm run build
 # or
 yarn build
@@ -54,6 +63,7 @@ yarn build
 
 To preview the production build locally:
 ```bash
+npm install
 npm run preview
 # or
 yarn preview
@@ -77,3 +87,7 @@ The following environment variables are required:
 | `VITE_SUPABASE_KEY` | Your Supabase anonymous key |
 
 You can obtain these values from your Supabase project settings.
+
+## Offline Support
+
+Writes to Supabase (QR uploads, approvals/rejections, and `Use Data` toggles) are queued locally when offline and automatically synced when the connection returns.
