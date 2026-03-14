@@ -104,6 +104,7 @@ export const approveUnconfirmedData = async (unconfirmedItem) => {
         'Bump?': unconfirmedItem['Bump?'],
         'Trench?': unconfirmedItem['Trench?'],
         'Penalties?': unconfirmedItem['Penalties?'],
+        'Broke Down?' : unconfirmedItem['Broke Down?'],
         'Notes': unconfirmedItem['Notes'],
         'Use Data': unconfirmedItem['Use Data'],
       }

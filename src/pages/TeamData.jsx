@@ -62,6 +62,8 @@ function TeamData() {
     return `${selectedTeams.length} Teams`
   }
 
+  console.log("MR" + matchRows)
+
   return (
     <div>
       <h1>Team Data</h1>

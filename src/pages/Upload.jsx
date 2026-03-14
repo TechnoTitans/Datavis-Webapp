@@ -194,7 +194,8 @@ function Upload() {
         'Bump?': lines[17] === 'true',
         'Trench?': lines[18] === 'true',
         'Penalties?': lines[19] === 'true',
-        'Notes': lines[20],
+        'Broke Down?' : lines[20] === 'true',
+        'Notes': lines[21],
         'Use Data': true,
         _teamNumber: parseInt(lines[1]),
         _matchNumber: parseInt(lines[2])
@@ -379,7 +380,7 @@ function Upload() {
 
       {isAuthenticated && (
         <div>
-          <h3>Unconfirmed Data Management</h3>
+          <h3>Unconfirmed Data Management 1:57</h3>
           <p>Review and approve scanned data below:</p>
           
           {unconfirmedData.length === 0 ? (
