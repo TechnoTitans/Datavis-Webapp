@@ -203,7 +203,6 @@ function AutoPaths() {
               return parts.length > 2 ? Number(parts[2]) : null;
             }).filter(num => num !== null);
             const uniqueMatchNumbers = [...new Set(matchNumbers)].sort((a, b) => a - b);
-            console.log(matchRows);
             const currentMatch = selectedMatchNumber[team];
             return (
               <div key={team} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

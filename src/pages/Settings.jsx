@@ -12,6 +12,9 @@ function Settings() {
   const [useAutoData, setUseAutoData] = useState(() => {
     return localStorage.getItem('useAutoData') === 'true'
   })
+  const [useOfflineMode, setUseOfflineMode] = useState(() => {
+    return localStorage.getItem('useOfflineMode') === 'true'
+  })
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [pendingToggleValue, setPendingToggleValue] = useState(false)
@@ -116,6 +119,11 @@ function Settings() {
     }
   }
 
+  const handleUseLocalData = async (checked) => {
+    setUseOfflineMode(checked)
+    localStorage.setItem('useOfflineMode', checked.toString())
+  }
+
   return (
     <div>
       <h2>Settings</h2>
@@ -154,6 +162,25 @@ function Settings() {
           </label>
           <p className="setting-description">
             When enabled, includes auto data in averages and totals. Not implemented yet. If you see this message, remind Jiayu to make it.
+          </p>
+        </div>
+      </div>
+        
+      <div className="settings-section">
+        <div className="setting-item">
+          <label className="switch-label">
+            <span>Offline Mode</span>
+            <div className="switch">
+              <input
+                type="checkbox"
+                checked={useOfflineMode}
+                onChange={(e) => handleUseLocalData(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </div>
+          </label>
+          <p className="setting-description">
+            Uses data from a local CSV file.
           </p>
         </div>
       </div>

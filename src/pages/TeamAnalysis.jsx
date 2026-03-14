@@ -30,18 +30,11 @@ function TeamAnalysis() {
   }
 
   const renderHeatMap = () => {
-    console.log(`dummy teams: ${dummyTeams}`);
-    console.log(`all match rows: ${allMatchRows}`);
-
-    console.log(`safe seelcted teams: ${safeSelectedTeams}`);
-    console.log(`safe seelcted teams: ${typeof(safeSelectedTeams[0])}`);
-
     if (!safeSelectedTeams.length) {
       return null
     }
 
     const frequencyMap = {}
-    console.log(`match rows: ${matchRows}`)
 
     matchRows.forEach(row => {
       const shotCoordinates = row['Shot Coordinates']
