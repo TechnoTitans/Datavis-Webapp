@@ -13,10 +13,10 @@ function Layout({ children }) {
   const navItems = [
     { to: '/team-data', label: 'Team Data' },
     { to: '/compare', label: 'Compare' },
-    { to: '/team-analysis', label: 'Team Analysis' },
+    { to: '/team-analysis', label: 'Scoring Locations' },
     { to: '/auto-paths', label: 'Auto Paths' },
-    { to: '/match-strategy', label: 'Match Strategy' },
-    { to: '/rankings', label: 'Rankings' },
+    //{ to: '/match-strategy', label: 'Match Strategy' },
+    //{ to: '/rankings', label: 'Rankings' },
     { to: '/picklist', label: 'Picklist' },
     { to: '/upload', label: 'Upload' },
     { to: '/settings', label: 'Settings' },
