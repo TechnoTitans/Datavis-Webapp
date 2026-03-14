@@ -13,7 +13,7 @@ function TeamAnalysis() {
   const { allTeams, matchRows: allMatchRows, loading } = useTeamData(dummyTeams, true)
   
   const matchRows = safeSelectedTeams.length > 0 
-    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Team Number'])))
+    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Scouting ID'].split('_')[1])))
     : allMatchRows
 
   const handleTeamToggle = (team) => {
@@ -30,13 +30,22 @@ function TeamAnalysis() {
   }
 
   const renderHeatMap = () => {
+    console.log(`dummy teams: ${dummyTeams}`);
+    console.log(`all match rows: ${allMatchRows}`);
+
+    console.log(`safe seelcted teams: ${safeSelectedTeams}`);
+    console.log(`safe seelcted teams: ${typeof(safeSelectedTeams[0])}`);
+
     if (!safeSelectedTeams.length) {
       return null
     }
 
     const frequencyMap = {}
+    console.log(`match rows: ${matchRows}`)
+
     matchRows.forEach(row => {
       const shotCoordinates = row['Shot Coordinates']
+
       if (shotCoordinates) {
         const coordinates = shotCoordinates.split(';').filter(coord => coord.trim() !== '')
         coordinates.forEach(coord => {

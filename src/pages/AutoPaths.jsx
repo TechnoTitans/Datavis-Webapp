@@ -159,7 +159,7 @@ function AutoPaths() {
   const { allTeams, matchRows: allMatchRows, loading } = useTeamData(dummyTeams, true)
   
   const matchRows = safeSelectedTeams.length > 0 
-    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Team Number'])))
+    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Scouting ID'].split("_")[1])))
     : allMatchRows
 
   const handleTeamToggle = (team) => {
@@ -203,6 +203,7 @@ function AutoPaths() {
               return parts.length > 2 ? Number(parts[2]) : null;
             }).filter(num => num !== null);
             const uniqueMatchNumbers = [...new Set(matchNumbers)].sort((a, b) => a - b);
+            console.log(matchRows);
             const currentMatch = selectedMatchNumber[team];
             return (
               <div key={team} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
